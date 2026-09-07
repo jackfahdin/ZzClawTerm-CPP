@@ -11,10 +11,10 @@
         "os": "Ubuntu 26.04.1 LTS",
         "qtVersion": "6.11.1"
     },
-    "measured": 207,
+    "measured": 215,
     "passed": true,
     "testName": "打开并关闭 50 个标签",
     "threshold": 3000,
-    "timestamp": "2026-09-07T12:01:22Z",
+    "timestamp": "2026-09-07T15:37:33Z",
     "unit": "ms"
 }

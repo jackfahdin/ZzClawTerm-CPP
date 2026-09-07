@@ -13,10 +13,10 @@
         "os": "Ubuntu 26.04.1 LTS",
         "qtVersion": "6.11.1"
     },
-    "measured": 122,
+    "measured": 170,
     "passed": true,
     "testName": "SFTP 面板 2 万条目目录分批填充",
     "threshold": 3000,
-    "timestamp": "2026-09-07T12:01:22Z",
+    "timestamp": "2026-09-07T15:37:33Z",
     "unit": "ms"
 }

@@ -21,6 +21,9 @@ ZzTerminalView::ZzTerminalView(QWidget *parent)
 {
     m_term = new QTermWidget(this, this);
     m_term->setScrollBarPosition(QTermWidget::ScrollBarRight);
+    // 最小终端网格：宽度不得窄于常见提示符长度、折行块不得高于屏幕，
+    // 杜绝极端小尺寸下 readline/conpty 重绘模型退化产生的显示残迹
+    m_term->setMinimumTerminalSize(24, 6);
 
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);

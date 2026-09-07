@@ -16,6 +16,6 @@
     "passed": true,
     "testName": "IDE 工作区外壳 assemble() 总耗时",
     "threshold": 500,
-    "timestamp": "2026-09-07T12:01:22Z",
+    "timestamp": "2026-09-07T15:37:33Z",
     "unit": "ms"
 }

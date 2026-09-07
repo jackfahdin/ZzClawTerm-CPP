@@ -10,16 +10,16 @@
         "buildType": "Release",
         "compiler": "GCC 15.2.0",
         "cpu": "x86_64",
-        "gitCommit": "78dc0c3f60a15a4866240a2afcfe3ebc2a93ac43",
+        "gitCommit": "d1259f94648185e3c7f880d710f7ee6dfae02709",
         "kernel": "7.0.0-30-generic",
         "memory_mb": 31194,
         "os": "Ubuntu 26.04.1 LTS",
         "qtVersion": "6.11.1"
     },
-    "measured": 0.212118,
+    "measured": 0.218127,
     "passed": true,
     "testName": "ZzColdStorage-random-read-24",
     "threshold": 5,
-    "timestamp": "2026-09-07T12:01:29Z",
+    "timestamp": "2026-09-07T15:39:14Z",
     "unit": "ms"
 }

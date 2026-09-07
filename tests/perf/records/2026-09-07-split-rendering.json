@@ -14,10 +14,10 @@
         "os": "Ubuntu 26.04.1 LTS",
         "qtVersion": "6.11.1"
     },
-    "measured": 65,
+    "measured": 62,
     "passed": true,
     "testName": "分屏 4 窗格渲染并关闭",
     "threshold": 2000,
-    "timestamp": "2026-09-07T12:01:22Z",
+    "timestamp": "2026-09-07T15:37:33Z",
     "unit": "ms"
 }

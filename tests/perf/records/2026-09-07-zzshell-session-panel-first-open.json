@@ -16,6 +16,6 @@
     "passed": true,
     "testName": "会话面板延迟工厂首开耗时",
     "threshold": 300,
-    "timestamp": "2026-09-07T12:01:22Z",
+    "timestamp": "2026-09-07T15:37:33Z",
     "unit": "ms"
 }

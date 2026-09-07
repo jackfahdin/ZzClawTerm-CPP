@@ -1,6 +1,6 @@
 {
     "details": {
-        "avgMs": 0.01920259,
+        "avgMs": 0.019470555,
         "samples": 200,
         "totalLines": 300000,
         "windowRows": 60
@@ -9,16 +9,16 @@
         "buildType": "Release",
         "compiler": "GCC 15.2.0",
         "cpu": "x86_64",
-        "gitCommit": "78dc0c3f60a15a4866240a2afcfe3ebc2a93ac43",
+        "gitCommit": "d1259f94648185e3c7f880d710f7ee6dfae02709",
         "kernel": "7.0.0-30-generic",
         "memory_mb": 31194,
         "os": "Ubuntu 26.04.1 LTS",
         "qtVersion": "6.11.1"
     },
-    "measured": 0.075875,
+    "measured": 0.07927,
     "passed": true,
     "testName": "ZzColdStorage-merged-scroll-read",
     "threshold": 16,
-    "timestamp": "2026-09-07T12:01:51Z",
+    "timestamp": "2026-09-07T15:39:36Z",
     "unit": "ms"
 }

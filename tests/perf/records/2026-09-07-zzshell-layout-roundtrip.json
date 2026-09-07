@@ -17,6 +17,6 @@
     "passed": true,
     "testName": "工作区布局 saveLayout+restoreLayout 往返耗时",
     "threshold": 50,
-    "timestamp": "2026-09-07T12:01:22Z",
+    "timestamp": "2026-09-07T15:37:33Z",
     "unit": "ms"
 }

@@ -11,10 +11,10 @@
         "os": "Ubuntu 26.04.1 LTS",
         "qtVersion": "6.11.1"
     },
-    "measured": 28,
+    "measured": 24,
     "passed": true,
     "testName": "滚动历史追加 10 万行",
     "threshold": 5000,
-    "timestamp": "2026-09-07T12:01:22Z",
+    "timestamp": "2026-09-07T15:37:33Z",
     "unit": "ms"
 }

@@ -1,23 +1,23 @@
 {
     "details": {
         "blockLines": 1024,
-        "elapsedMs": 663,
+        "elapsedMs": 676,
         "lineCount": 500736
     },
     "environment": {
         "buildType": "Release",
         "compiler": "GCC 15.2.0",
         "cpu": "x86_64",
-        "gitCommit": "78dc0c3f60a15a4866240a2afcfe3ebc2a93ac43",
+        "gitCommit": "d1259f94648185e3c7f880d710f7ee6dfae02709",
         "kernel": "7.0.0-30-generic",
         "memory_mb": 31194,
         "os": "Ubuntu 26.04.1 LTS",
         "qtVersion": "6.11.1"
     },
-    "measured": 755257.9185520362,
+    "measured": 740733.7278106508,
     "passed": true,
     "testName": "ZzColdStorage-write-throughput",
     "threshold": 500000,
-    "timestamp": "2026-09-07T12:01:24Z",
+    "timestamp": "2026-09-07T15:39:08Z",
     "unit": "lines/s"
 }
