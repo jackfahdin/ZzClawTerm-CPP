@@ -58,12 +58,17 @@ ZzTerminalView::ZzTerminalView(QWidget *parent)
                     m_transport->write(QByteArray(data, size));
                 }
             });
-    // 终端尺寸 → 传输 + 状态栏
+    // 终端尺寸 → 传输（尾随去抖 150ms：拖拽期间只记最终尺寸，停手后一次送达，
+    // 避免远端按过期几何批量重绘产生显示残迹）+ 状态栏（即时刷新）
+    connect(&m_resizeDebouncer, &ZzResizeDebouncer::settled, this,
+            [this](int cols, int rows) {
+                if (m_transport) {
+                    m_transport->resize(cols, rows);
+                }
+            });
     connect(m_term, &QTermWidget::termSizeChange, this,
             [this](int lines, int columns) {
-                if (m_transport) {
-                    m_transport->resize(columns, lines);
-                }
+                m_resizeDebouncer.post(columns, lines);
                 emit sizeChanged(columns, lines);
             });
 

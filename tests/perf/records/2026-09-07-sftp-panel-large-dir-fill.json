@@ -1,0 +1,22 @@
+{
+    "details": {
+        "batchSize": 500,
+        "entries": 20000
+    },
+    "environment": {
+        "buildType": "Release",
+        "compiler": "GNU 15.2.0",
+        "cpu": "x86_64",
+        "gitCommit": "78dc0c3",
+        "kernel": "7.0.0-30-generic",
+        "memory_mb": 31194,
+        "os": "Ubuntu 26.04.1 LTS",
+        "qtVersion": "6.11.1"
+    },
+    "measured": 122,
+    "passed": true,
+    "testName": "SFTP 面板 2 万条目目录分批填充",
+    "threshold": 3000,
+    "timestamp": "2026-09-07T12:01:22Z",
+    "unit": "ms"
+}

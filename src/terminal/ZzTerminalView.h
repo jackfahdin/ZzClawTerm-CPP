@@ -2,6 +2,7 @@
 
 #include <QtWidgets/QWidget>
 
+#include "ZzResizeDebouncer.h"
 #include "transport/ZzTransportEndpoint.h"
 #include "transport/ZzTransportInterface.h"
 
@@ -15,7 +16,7 @@ class ZzScrollbackBridge;
  * @brief 单标签终端视图：组合 QTermWidget 与一个传输实例（规格 §七）。
  *
  * 职责只有胶水：远端输出 → recvData，键盘输入 → transport->write，
- * 尺寸变化 → transport->resize；外加设置应用、错误/断开信号透传，
+ * 尺寸变化 → 去抖合并后 transport->resize；外加设置应用、错误/断开信号透传，
  * 以及标签内错误横幅（出错显示、重试重连、连通自动隐藏，规格 §八）。
  * 不拥有传输的所有权以外的语义——传输以本视图为 QObject 父对象随视图销毁。
  */
@@ -90,6 +91,7 @@ private:
 
     QTermWidget *m_term = nullptr;
     ZzTransportInterface *m_transport = nullptr;
+    ZzResizeDebouncer m_resizeDebouncer{150}; ///< resize 尾随去抖：拖拽期间合并，停手后发最终尺寸
     ZzTransportEndpoint m_lastEndpoint;  ///< 最近一次 open 参数（重连用）
     QString m_encoding;                  ///< 状态栏展示的编码名
     ZzScrollbackBridge *m_scrollbackBridge = nullptr; ///< 滚动历史桥（可空，以本视图为父）

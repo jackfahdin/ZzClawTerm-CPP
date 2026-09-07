@@ -34,6 +34,7 @@ public:
     QByteArray writtenData;        ///< 累计写入内容
     int lastCols = 0;              ///< 最近一次 resize 列数
     int lastRows = 0;              ///< 最近一次 resize 行数
+    int resizeCallCount = 0;       ///< resize 调用次数（去抖断言用）
     int openCallCount = 0;         ///< open 调用次数（重连断言用）
     int closeCallCount = 0;        ///< close 调用次数
     ZzTransportEndpoint lastEndpoint; ///< 最近一次 open 参数

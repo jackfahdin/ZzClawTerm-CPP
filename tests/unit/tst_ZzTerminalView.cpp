@@ -47,13 +47,35 @@ private slots:
         view.setTransport(transport);
         QSignalSpy sizeSpy(&view, &ZzTerminalView::sizeChanged);
 
-        // QTermWidget::termSizeChange(lines, columns) → transport->resize(cols, rows)
+        // QTermWidget::termSizeChange(lines, columns) → 去抖后 transport->resize(cols, rows)
         emit view.termWidget()->termSizeChange(40, 100);
-        QCOMPARE(transport->lastCols, 100);
-        QCOMPARE(transport->lastRows, 40);
+        // 状态栏信号即时发射，transport 在去抖窗口内不转发
         QCOMPARE(sizeSpy.count(), 1);
         QCOMPARE(sizeSpy.first().at(0).toInt(), 100);
         QCOMPARE(sizeSpy.first().at(1).toInt(), 40);
+        QCOMPARE(transport->resizeCallCount, 0);
+        // 去抖期满（150ms）后转发最终尺寸
+        QTRY_COMPARE_WITH_TIMEOUT(transport->resizeCallCount, 1, 1000);
+        QCOMPARE(transport->lastCols, 100);
+        QCOMPARE(transport->lastRows, 40);
+    }
+
+    void sizeStormCoalescesToFinal()
+    {
+        ZzTerminalView view;
+        auto *transport = new ZzMockTransport(&view);
+        view.setTransport(transport);
+
+        // 模拟拖拽风暴：连续 10 次尺寸变化，间隔小于去抖窗口
+        for (int i = 0; i < 10; ++i) {
+            emit view.termWidget()->termSizeChange(40, 100 + i);
+            QTest::qWait(20);
+        }
+
+        // 风暴结束后只转发一次，且为最终尺寸
+        QTRY_COMPARE_WITH_TIMEOUT(transport->resizeCallCount, 1, 1000);
+        QCOMPARE(transport->lastCols, 109);
+        QCOMPARE(transport->lastRows, 40);
     }
 
     void applyGlobalSettings()

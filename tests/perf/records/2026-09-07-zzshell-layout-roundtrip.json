@@ -1,0 +1,22 @@
+{
+    "details": {
+        "layoutBytes": 387,
+        "samples": 1
+    },
+    "environment": {
+        "buildType": "Release",
+        "compiler": "GNU 15.2.0",
+        "cpu": "x86_64",
+        "gitCommit": "78dc0c3",
+        "kernel": "7.0.0-30-generic",
+        "memory_mb": 31194,
+        "os": "Ubuntu 26.04.1 LTS",
+        "qtVersion": "6.11.1"
+    },
+    "measured": 0,
+    "passed": true,
+    "testName": "工作区布局 saveLayout+restoreLayout 往返耗时",
+    "threshold": 50,
+    "timestamp": "2026-09-07T12:01:22Z",
+    "unit": "ms"
+}

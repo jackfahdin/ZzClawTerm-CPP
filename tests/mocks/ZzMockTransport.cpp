@@ -33,6 +33,7 @@ void ZzMockTransport::write(const QByteArray &data)
 
 void ZzMockTransport::resize(int cols, int rows)
 {
+    ++resizeCallCount;
     lastCols = cols;
     lastRows = rows;
 }
