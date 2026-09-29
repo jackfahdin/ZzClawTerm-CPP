@@ -19,9 +19,9 @@ set(ZZTERM_WITH_CONTOUR OFF CACHE BOOL "" FORCE)
 set(ZZTERM_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory("${ZZTERMCORE_SOURCE_DIR}" zztermcore EXCLUDE_FROM_ALL)
 
-# 注：ZzTermCore 实际导出的别名目标为 ZzTerm::Core 与 ZzTerm::Pty。
+# 注：链接文档名 ZzTerm::ZzTermCore（build-tree 与 install-tree 统一，M13 T1 审查升格修复）。
 qt_add_executable(zzcore_spike main.cpp ZzCoreViewWidget.h ZzCoreViewWidget.cpp)
-target_link_libraries(zzcore_spike PRIVATE Qt6::Widgets ZzTerm::Core ZzTerm::Pty)
+target_link_libraries(zzcore_spike PRIVATE Qt6::Widgets ZzTerm::ZzTermCore ZzTerm::Pty)
 
 enable_testing()
 add_subdirectory(tests)
