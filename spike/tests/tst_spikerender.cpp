@@ -8,6 +8,8 @@
  * - case 3（M14）：滚动偏移拼接——上滚后可见行为历史行，回底恢复屏幕行；
  * - case 4（M14）：Alternate 屏历史归零，滚动偏移夹取到 0。
  * - case 5（M14 R1）：滚轮方向——上滚（steps>0）进入历史，下滚回底。
+ * - case 6（M13 修复回归）：spawn bash（rawMode=false）交互回显链——
+ *   键入命令回显上屏并产生独立输出行。
  */
 
 #include <QSocketNotifier>
@@ -75,6 +77,12 @@ private slots:
      * @brief case 5（M14 R1）：滚轮方向——上滚（steps>0）进入历史，下滚回底。
      */
     void wheelUpScrollsIntoHistory();
+
+    /**
+     * @brief case 6（M13 修复回归）：交互 bash 链回显——rawMode=false 下
+     * 键入命令应回显上屏且产生独立输出行（rawMode=true 的 -echo 下必失败）。
+     */
+    void bashEchoChainWorks();
 };
 
 void TstSpikeRender::feedRendersMark()
@@ -175,6 +183,43 @@ void TstSpikeRender::wheelUpScrollsIntoHistory()
     // 下滚一格（steps=-1）：回底。
     widget.scrollByWheelStepsForTest(-1);
     QCOMPARE(widget.scrollOffset(), 0);
+}
+
+void TstSpikeRender::bashEchoChainWorks()
+{
+    ZzCoreViewWidget widget;
+
+    // 与 main.cpp runLocal 的 spawn 配置保持一致（rawMode=false 交互档）——
+    // main.cpp 该配置若变更，此处须同步修改，本用例即该配置的回归护栏。
+    auto pty = ZzPty::spawn(ZzPtyConfig{{"bash"}, 80, 24, false});
+    QVERIFY(pty != nullptr);
+
+    // ZzPty 的 master fd 默认阻塞：read 循环到 EAGAIN 需调用方自置 O_NONBLOCK。
+    fcntl(pty->masterFd(), F_SETFL, O_NONBLOCK);
+
+    QSocketNotifier notifier(pty->masterFd(), QSocketNotifier::Read, &widget);
+    QObject::connect(&notifier, &QSocketNotifier::activated, &widget, [&] {
+        std::byte buf[64 * 1024];
+        for (;;) {
+            const std::ptrdiff_t n = pty->read(std::span<std::byte>(buf, sizeof(buf)));
+            if (n <= 0)
+                break;
+            widget.feedForTest(
+                std::string_view(reinterpret_cast<const char*>(buf), static_cast<std::size_t>(n)));
+        }
+    });
+
+    // bash 启动与 readline 就绪需要时间：等提示符上屏后再写入命令。
+    QTRY_VERIFY_WITH_TIMEOUT(screenText(widget.terminal()).contains(QRegularExpression("[$#]")),
+                             5000);
+
+    const std::string cmd = "echo zz-echo-mark\r";
+    QVERIFY(pty->writeAll(std::as_bytes(std::span<const char>(cmd.data(), cmd.size()))));
+
+    // 回显上屏（命令行含 echo zz-echo-mark）+ 独立输出行（裸 zz-echo-mark），
+    // 两处共出现 >= 2 次；rawMode=true 下 -echo 无回显字节，本断言必失败。
+    QTRY_VERIFY_WITH_TIMEOUT(
+        screenText(widget.terminal()).count(QStringLiteral("zz-echo-mark")) >= 2, 5000);
 }
 
 QTEST_MAIN(TstSpikeRender)

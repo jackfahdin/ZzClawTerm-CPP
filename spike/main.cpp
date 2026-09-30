@@ -107,7 +107,9 @@ int runLocal(bool probe)
     widget.setWindowTitle(QStringLiteral("spike-local"));
 
     const ZzSize grid = widget.terminal().size();
-    auto pty = ZzPty::spawn(ZzPtyConfig{{"bash"}, grid.cols, grid.rows, true});
+    // 交互会话须 rawMode=false（slave 保持 echo/opost/isig），rawMode=true
+    // 仅用于字节级透传验证（M13 回显错位根因）。
+    auto pty = ZzPty::spawn(ZzPtyConfig{{"bash"}, grid.cols, grid.rows, false});
     if (!pty) {
         std::fprintf(stderr, "spike: ZzPty spawn bash 失败。\n");
         return 1;
