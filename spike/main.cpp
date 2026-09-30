@@ -21,8 +21,10 @@
 #include <QApplication>
 #include <QDir>
 #include <QFileInfo>
+#include <QHBoxLayout>
 #include <QInputDialog>
 #include <QLineEdit>
+#include <QScrollBar>
 #include <QSocketNotifier>
 #include <QStandardPaths>
 #include <QTimer>
@@ -148,8 +150,27 @@ int runLocal(bool probe)
         armProbeWatch(widget);
     }
 
-    widget.resize(widget.sizeHint());
-    widget.show();
+    // M14：滚动条与 widget 同窗装配（spike 最小形态：上限跟随历史行数）。
+    QScrollBar scrollBar(Qt::Vertical);
+    scrollBar.setRange(0, 0);
+    QObject::connect(&widget, &ZzCoreViewWidget::scrollRangeChanged, &scrollBar,
+                     &QScrollBar::setMaximum);
+    QObject::connect(&widget, &ZzCoreViewWidget::scrollOffsetChanged, &scrollBar,
+                     &QScrollBar::setValue);
+    QObject::connect(&scrollBar, &QScrollBar::valueChanged, &widget,
+                     &ZzCoreViewWidget::setScrollOffset);
+
+    // window 堆分配：layout 会把栈对象 widget/scrollBar 收编为其子对象，
+    // 栈展开时它们自重父摘除，window 由 QApplication 析构期统一回收，
+    // 避免栈上 window 先析构删除子对象导致的 double free。
+    auto* window = new QWidget;
+    QHBoxLayout layout(window);
+    layout.setContentsMargins(0, 0, 0, 0);
+    layout.addWidget(&widget, 1);
+    layout.addWidget(&scrollBar);
+    window->resize(widget.sizeHint().width() + scrollBar.sizeHint().width(),
+                   widget.sizeHint().height());
+    window->show();
     return QCoreApplication::exec();
 }
 
@@ -296,8 +317,27 @@ int runSsh(const QString& target, const QString& keyPath, bool probe)
         armProbeWatch(widget);
 
     conn.connectToHost(host, port, user);
-    widget.resize(widget.sizeHint());
-    widget.show();
+    // M14：滚动条与 widget 同窗装配（spike 最小形态：上限跟随历史行数）。
+    QScrollBar scrollBar(Qt::Vertical);
+    scrollBar.setRange(0, 0);
+    QObject::connect(&widget, &ZzCoreViewWidget::scrollRangeChanged, &scrollBar,
+                     &QScrollBar::setMaximum);
+    QObject::connect(&widget, &ZzCoreViewWidget::scrollOffsetChanged, &scrollBar,
+                     &QScrollBar::setValue);
+    QObject::connect(&scrollBar, &QScrollBar::valueChanged, &widget,
+                     &ZzCoreViewWidget::setScrollOffset);
+
+    // window 堆分配：layout 会把栈对象 widget/scrollBar 收编为其子对象，
+    // 栈展开时它们自重父摘除，window 由 QApplication 析构期统一回收，
+    // 避免栈上 window 先析构删除子对象导致的 double free。
+    auto* window = new QWidget;
+    QHBoxLayout layout(window);
+    layout.setContentsMargins(0, 0, 0, 0);
+    layout.addWidget(&widget, 1);
+    layout.addWidget(&scrollBar);
+    window->resize(widget.sizeHint().width() + scrollBar.sizeHint().width(),
+                   widget.sizeHint().height());
+    window->show();
     return QCoreApplication::exec();
 }
 

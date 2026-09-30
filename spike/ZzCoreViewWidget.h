@@ -14,11 +14,13 @@
  * - 尺寸变化按格宽格高换算行列，调 ZzTerminal::resize 并发出
  *   gridResized 信号供宿主转发 PTY/通道 window-change。
  *
- * 本 widget 是 spike 产物：全量重绘、无增量、无配色（背景/文本默认色）、
- * 无历史滚动（RenderView 无历史行访问件，见任务 1 报告 API 缺口登记）。
+ * 本 widget 是 spike 产物：全量重绘、无增量、无配色（背景/文本默认色）。
+ * - 历史滚动（M14）：滚轮/滚动条偏移经 ZzHistoryView 拼接历史段与屏幕段
+ *   绘制；键盘输入自动回底；Alternate 屏（vim 等）滚动禁用。
  */
 
 #include <QWidget>
+#include <QString>
 
 #include <functional>
 #include <string>
@@ -59,6 +61,31 @@ public:
     [[nodiscard]] const ZzTerminal& terminal() const noexcept { return term_; }
 
     /**
+     * @brief 设置滚动偏移（0 = 底部最新；向上滚动查看历史的行数）。
+     * @param offset 目标偏移，自动夹取到 [0, maxScrollOffset()]。
+     */
+    void setScrollOffset(int offset);
+
+    /**
+     * @brief 当前滚动偏移。
+     * @return 0 表示底部。
+     */
+    [[nodiscard]] int scrollOffset() const noexcept { return scrollOffset_; }
+
+    /**
+     * @brief 最大滚动偏移（即可读历史行数；Alternate 屏契约恒 0）。
+     * @return 历史行数。
+     */
+    [[nodiscard]] int maxScrollOffset() const noexcept;
+
+    /**
+     * @brief 测试钩子：可见第 row 行拼接后的纯文本（历史段+屏幕段统一视口）。
+     * @param row 可见行号（0 起）。
+     * @return 该行全部格文本拼接。
+     */
+    [[nodiscard]] QString visibleLineTextForTest(int row) const;
+
+    /**
      * @brief 建议尺寸（80x24 网格按当前格宽格高换算的像素尺寸）。
      * @return 建议像素尺寸。
      */
@@ -72,10 +99,23 @@ signals:
      */
     void gridResized(int cols, int rows);
 
+    /**
+     * @brief 可滚动范围变化（历史行数变化；宿主据此更新滚动条上限）。
+     * @param maximum 新的最大滚动偏移。
+     */
+    void scrollRangeChanged(int maximum);
+
+    /**
+     * @brief 滚动偏移变化（宿主据此同步滚动条位置）。
+     * @param offset 新偏移（0 = 底部）。
+     */
+    void scrollOffsetChanged(int offset);
+
 protected:
     void paintEvent(QPaintEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
 
 private:
     /**
@@ -83,9 +123,17 @@ private:
      */
     void updateCellMetrics();
 
+    /**
+     * @brief 统一坐标取行：历史区在前、屏幕区在后，视口底部对齐。
+     * @param row 可见行号（0 起）。
+     * @return 该行只读句柄（当帧有效）。
+     */
+    [[nodiscard]] ZzLineView lineViewAtVisibleRow(int row) const;
+
     ZzTerminal                      term_;     ///< 终端模拟器（Native 后端）。
     std::function<void(std::string)> writeFn_; ///< 输入字节写出回调。
     int                             cellWidth_  = 1; ///< 单格像素宽。
     int                             cellHeight_ = 1; ///< 单格像素高。
     int                             cellAscent_ = 0; ///< 基线 ascent（drawText 用）。
+    int scrollOffset_ = 0; ///< 滚动偏移（0 = 底部最新）。
 };

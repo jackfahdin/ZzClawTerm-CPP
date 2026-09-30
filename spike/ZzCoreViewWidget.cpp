@@ -5,6 +5,7 @@
 #include <QKeyEvent>
 #include <QPainter>
 #include <QPaintEvent>
+#include <QWheelEvent>
 
 #include <span>
 
@@ -55,7 +56,11 @@ void ZzCoreViewWidget::setWriteFn(std::function<void(std::string)> fn)
 
 void ZzCoreViewWidget::feedForTest(std::string_view data)
 {
+    const int maxBefore = maxScrollOffset();
     term_.feed(std::as_bytes(std::span<const char>(data.data(), data.size())));
+    if (maxScrollOffset() != maxBefore)
+        emit scrollRangeChanged(maxScrollOffset());
+    setScrollOffset(scrollOffset_); // 夹取（reflow/裁剪后偏移可能越界）
     update();
 }
 
@@ -84,7 +89,7 @@ void ZzCoreViewWidget::paintEvent(QPaintEvent* /*event*/)
     // spike 全量重绘：无增量、无配色（文本用默认前景色），
     // 空格与续格 text 为空串自然跳过。
     for (int row = 0; row < grid.rows; ++row) {
-        const ZzLineView line = view.lineAt(row);
+        const ZzLineView line = lineViewAtVisibleRow(row);
         const int        y    = row * cellHeight_ + cellAscent_;
         for (int col = 0; col < grid.cols; ++col) {
             const ZzCellView cell = line.cellAt(col);
@@ -97,8 +102,9 @@ void ZzCoreViewWidget::paintEvent(QPaintEvent* /*event*/)
 
     // 光标：按 cursor() 位置画反色矩形并重绘该格文本。
     const ZzCursorState cursor = view.cursor();
-    if (cursor.visible && cursor.position.row >= 0 && cursor.position.row < grid.rows
-        && cursor.position.col >= 0 && cursor.position.col < grid.cols) {
+    if (scrollOffset_ == 0 && cursor.visible && cursor.position.row >= 0
+        && cursor.position.row < grid.rows && cursor.position.col >= 0
+        && cursor.position.col < grid.cols) {
         const QRect cursorRect(cursor.position.col * cellWidth_,
                                cursor.position.row * cellHeight_,
                                cellWidth_, cellHeight_);
@@ -115,6 +121,8 @@ void ZzCoreViewWidget::paintEvent(QPaintEvent* /*event*/)
 
 void ZzCoreViewWidget::keyPressEvent(QKeyEvent* event)
 {
+    if (scrollOffset_ != 0)
+        setScrollOffset(0);
     ZzKeyEvent keyEvent;
     keyEvent.action    = ZzKeyEvent::Action::Press;
     keyEvent.modifiers = mapModifiers(event->modifiers());
@@ -191,6 +199,59 @@ void ZzCoreViewWidget::resizeEvent(QResizeEvent* event)
 
     if (term_.resize(cols, rows)) {
         emit gridResized(cols, rows);
+        emit scrollRangeChanged(maxScrollOffset()); // M14：reflow 改变历史行数
+        setScrollOffset(scrollOffset_);             // 夹取
         update();
     }
+}
+
+int ZzCoreViewWidget::maxScrollOffset() const noexcept
+{
+    return static_cast<int>(term_.historyView().lineCount()); // Alternate 屏契约恒 0
+}
+
+void ZzCoreViewWidget::setScrollOffset(int offset)
+{
+    offset = qBound(0, offset, maxScrollOffset());
+    if (offset == scrollOffset_)
+        return;
+    scrollOffset_ = offset;
+    emit scrollOffsetChanged(scrollOffset_);
+    update();
+}
+
+ZzLineView ZzCoreViewWidget::lineViewAtVisibleRow(int row) const
+{
+    // 统一坐标：历史区 [0, hist) 在前、屏幕区 [hist, hist+rows) 在后；
+    // 视口底部对齐，scrollOffset_ 为离底行数。
+    const auto hist = term_.historyView().lineCount();
+    const auto u    = hist - static_cast<std::size_t>(scrollOffset_)
+                    + static_cast<std::size_t>(row);
+    if (u < hist)
+        return term_.historyView().lineAt(u);
+    return term_.renderView().lineAt(static_cast<int>(u - hist));
+}
+
+QString ZzCoreViewWidget::visibleLineTextForTest(int row) const
+{
+    const ZzLineView line = lineViewAtVisibleRow(row);
+    QString out;
+    for (int col = 0; col < line.cellCount(); ++col)
+        out += QString::fromStdString(line.cellAt(col).text);
+    return out;
+}
+
+void ZzCoreViewWidget::wheelEvent(QWheelEvent* event)
+{
+    if (term_.isAlternateScreen()) { // Alternate 无历史（契约 lineCount 恒 0）
+        event->ignore();
+        return;
+    }
+    const int steps = event->angleDelta().y() / 120;
+    if (steps != 0) {
+        setScrollOffset(scrollOffset_ - steps * 3); // 每滚轮格 3 行
+        event->accept();
+        return;
+    }
+    QWidget::wheelEvent(event);
 }
