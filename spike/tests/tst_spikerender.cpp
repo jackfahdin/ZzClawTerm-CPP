@@ -7,6 +7,7 @@
  *   QSocketNotifier->feedForTest 全链上屏，QTRY_VERIFY_WITH_TIMEOUT(5s) 断言。
  * - case 3（M14）：滚动偏移拼接——上滚后可见行为历史行，回底恢复屏幕行；
  * - case 4（M14）：Alternate 屏历史归零，滚动偏移夹取到 0。
+ * - case 5（M14 R1）：滚轮方向——上滚（steps>0）进入历史，下滚回底。
  */
 
 #include <QSocketNotifier>
@@ -69,6 +70,11 @@ private slots:
      * @brief case 4（M14）：Alternate 屏历史归零，滚动偏移夹取到 0。
      */
     void alternateClampsScroll();
+
+    /**
+     * @brief case 5（M14 R1）：滚轮方向——上滚（steps>0）进入历史，下滚回底。
+     */
+    void wheelUpScrollsIntoHistory();
 };
 
 void TstSpikeRender::feedRendersMark()
@@ -150,6 +156,25 @@ void TstSpikeRender::alternateClampsScroll()
 
     widget.feedForTest("\x1b[?1049l"); // 回 Primary 恢复
     QCOMPARE(widget.maxScrollOffset(), 17);
+}
+
+void TstSpikeRender::wheelUpScrollsIntoHistory()
+{
+    ZzCoreViewWidget widget;
+    std::string script;
+    for (int i = 0; i < 40; ++i)
+        script += "hist-" + std::to_string(i) + "\r\n";
+    widget.feedForTest(script);
+    QCOMPARE(widget.scrollOffset(), 0);
+
+    // 上滚一格（angleDelta().y()=+120 -> steps=+1）：offset 增大 3 行进入历史。
+    widget.scrollByWheelStepsForTest(1);
+    QCOMPARE(widget.scrollOffset(), 3);
+    QVERIFY(widget.visibleLineTextForTest(0).contains(QStringLiteral("hist-14")));
+
+    // 下滚一格（steps=-1）：回底。
+    widget.scrollByWheelStepsForTest(-1);
+    QCOMPARE(widget.scrollOffset(), 0);
 }
 
 QTEST_MAIN(TstSpikeRender)

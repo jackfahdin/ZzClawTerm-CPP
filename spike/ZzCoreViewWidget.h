@@ -86,6 +86,12 @@ public:
     [[nodiscard]] QString visibleLineTextForTest(int row) const;
 
     /**
+     * @brief 测试钩子：按滚轮格数滚动（wheelEvent 共用的同一逻辑）。
+     * @param steps 滚轮格数（angleDelta().y()/120；正 = 上滚进入历史，每格 3 行）。
+     */
+    void scrollByWheelStepsForTest(int steps);
+
+    /**
      * @brief 建议尺寸（80x24 网格按当前格宽格高换算的像素尺寸）。
      * @return 建议像素尺寸。
      */

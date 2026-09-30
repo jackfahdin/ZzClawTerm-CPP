@@ -155,10 +155,14 @@ int runLocal(bool probe)
     scrollBar.setRange(0, 0);
     QObject::connect(&widget, &ZzCoreViewWidget::scrollRangeChanged, &scrollBar,
                      &QScrollBar::setMaximum);
+    // M14 R1：滚动条朝向常规化——thumb 底部 = 最新（value = maxScrollOffset - offset）。
+    // 防递归靠两端同值早退：setValue 同值不发 valueChanged，setScrollOffset 同值直接返回。
     QObject::connect(&widget, &ZzCoreViewWidget::scrollOffsetChanged, &scrollBar,
-                     &QScrollBar::setValue);
+                     [&scrollBar, &widget](int offset) {
+                         scrollBar.setValue(widget.maxScrollOffset() - offset);
+                     });
     QObject::connect(&scrollBar, &QScrollBar::valueChanged, &widget,
-                     &ZzCoreViewWidget::setScrollOffset);
+                     [&widget](int v) { widget.setScrollOffset(widget.maxScrollOffset() - v); });
 
     // window 堆分配：layout 会把栈对象 widget/scrollBar 收编为其子对象，
     // 栈展开时它们自重父摘除，window 由 QApplication 析构期统一回收，
@@ -322,10 +326,14 @@ int runSsh(const QString& target, const QString& keyPath, bool probe)
     scrollBar.setRange(0, 0);
     QObject::connect(&widget, &ZzCoreViewWidget::scrollRangeChanged, &scrollBar,
                      &QScrollBar::setMaximum);
+    // M14 R1：滚动条朝向常规化——thumb 底部 = 最新（value = maxScrollOffset - offset）。
+    // 防递归靠两端同值早退：setValue 同值不发 valueChanged，setScrollOffset 同值直接返回。
     QObject::connect(&widget, &ZzCoreViewWidget::scrollOffsetChanged, &scrollBar,
-                     &QScrollBar::setValue);
+                     [&scrollBar, &widget](int offset) {
+                         scrollBar.setValue(widget.maxScrollOffset() - offset);
+                     });
     QObject::connect(&scrollBar, &QScrollBar::valueChanged, &widget,
-                     &ZzCoreViewWidget::setScrollOffset);
+                     [&widget](int v) { widget.setScrollOffset(widget.maxScrollOffset() - v); });
 
     // window 堆分配：layout 会把栈对象 widget/scrollBar 收编为其子对象，
     // 栈展开时它们自重父摘除，window 由 QApplication 析构期统一回收，

@@ -249,9 +249,15 @@ void ZzCoreViewWidget::wheelEvent(QWheelEvent* event)
     }
     const int steps = event->angleDelta().y() / 120;
     if (steps != 0) {
-        setScrollOffset(scrollOffset_ - steps * 3); // 每滚轮格 3 行
+        scrollByWheelStepsForTest(steps);
         event->accept();
         return;
     }
     QWidget::wheelEvent(event);
+}
+
+void ZzCoreViewWidget::scrollByWheelStepsForTest(int steps)
+{
+    // offset 语义为离底行数：上滚（steps > 0）增大 offset 进入历史，每格 3 行。
+    setScrollOffset(scrollOffset_ + steps * 3);
 }
