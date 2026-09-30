@@ -153,8 +153,13 @@ int runLocal(bool probe)
     // M14：滚动条与 widget 同窗装配（spike 最小形态：上限跟随历史行数）。
     QScrollBar scrollBar(Qt::Vertical);
     scrollBar.setRange(0, 0);
+    // M14 R2：上限变化后同步 value——历史增长时 widget 若钉底（offset 同值早退、
+    // 不发 scrollOffsetChanged），thumb 需随之保持在 value = max - offset 的映射位。
     QObject::connect(&widget, &ZzCoreViewWidget::scrollRangeChanged, &scrollBar,
-                     &QScrollBar::setMaximum);
+                     [&scrollBar, &widget](int max) {
+                         scrollBar.setMaximum(max);
+                         scrollBar.setValue(max - widget.scrollOffset());
+                     });
     // M14 R1：滚动条朝向常规化——thumb 底部 = 最新（value = maxScrollOffset - offset）。
     // 防递归靠两端同值早退：setValue 同值不发 valueChanged，setScrollOffset 同值直接返回。
     QObject::connect(&widget, &ZzCoreViewWidget::scrollOffsetChanged, &scrollBar,
@@ -324,8 +329,13 @@ int runSsh(const QString& target, const QString& keyPath, bool probe)
     // M14：滚动条与 widget 同窗装配（spike 最小形态：上限跟随历史行数）。
     QScrollBar scrollBar(Qt::Vertical);
     scrollBar.setRange(0, 0);
+    // M14 R2：上限变化后同步 value——历史增长时 widget 若钉底（offset 同值早退、
+    // 不发 scrollOffsetChanged），thumb 需随之保持在 value = max - offset 的映射位。
     QObject::connect(&widget, &ZzCoreViewWidget::scrollRangeChanged, &scrollBar,
-                     &QScrollBar::setMaximum);
+                     [&scrollBar, &widget](int max) {
+                         scrollBar.setMaximum(max);
+                         scrollBar.setValue(max - widget.scrollOffset());
+                     });
     // M14 R1：滚动条朝向常规化——thumb 底部 = 最新（value = maxScrollOffset - offset）。
     // 防递归靠两端同值早退：setValue 同值不发 valueChanged，setScrollOffset 同值直接返回。
     QObject::connect(&widget, &ZzCoreViewWidget::scrollOffsetChanged, &scrollBar,
