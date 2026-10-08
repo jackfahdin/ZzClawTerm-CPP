@@ -9,6 +9,9 @@
 
 #include <span>
 
+#include <cstdlib>
+#include <cstring>
+
 namespace {
 
 /**
@@ -47,6 +50,14 @@ ZzCoreViewWidget::ZzCoreViewWidget(QWidget* parent)
         if (writeFn_)
             writeFn_(std::string(bytes));
     });
+
+    // 操作留痕：ZZCORE_SPIKE_TRACE=<路径> 时把 feed 字节与网格 resize
+    // 依序写入留痕文件，供离线重放定位 resize 相关问题（弃子诊断件）。
+    if (const char* path = std::getenv("ZZCORE_SPIKE_TRACE"); path && *path) {
+        trace_ = std::fopen(path, "wb");
+        if (!trace_)
+            std::fprintf(stderr, "spike: 留痕文件 %s 打开失败\n", path);
+    }
 }
 
 void ZzCoreViewWidget::setWriteFn(std::function<void(std::string)> fn)
@@ -56,12 +67,36 @@ void ZzCoreViewWidget::setWriteFn(std::function<void(std::string)> fn)
 
 void ZzCoreViewWidget::feedForTest(std::string_view data)
 {
+    traceFeed(data);
     const int maxBefore = maxScrollOffset();
     term_.feed(std::as_bytes(std::span<const char>(data.data(), data.size())));
     if (maxScrollOffset() != maxBefore)
         emit scrollRangeChanged(maxScrollOffset());
     setScrollOffset(scrollOffset_); // 夹取（reflow/裁剪后偏移可能越界）
     update();
+}
+
+// 留痕格式（小端）：'F' u32len bytes / 'R' i32cols i32rows，逐条 flush。
+void ZzCoreViewWidget::traceFeed(std::string_view data)
+{
+    if (!trace_)
+        return;
+    std::fputc('F', trace_);
+    const std::uint32_t len = static_cast<std::uint32_t>(data.size());
+    std::fwrite(&len, sizeof(len), 1, trace_);
+    std::fwrite(data.data(), 1, data.size(), trace_);
+    std::fflush(trace_);
+}
+
+void ZzCoreViewWidget::traceResize(int cols, int rows)
+{
+    if (!trace_)
+        return;
+    std::fputc('R', trace_);
+    const std::int32_t c = cols, r = rows;
+    std::fwrite(&c, sizeof(c), 1, trace_);
+    std::fwrite(&r, sizeof(r), 1, trace_);
+    std::fflush(trace_);
 }
 
 QSize ZzCoreViewWidget::sizeHint() const
@@ -198,6 +233,7 @@ void ZzCoreViewWidget::resizeEvent(QResizeEvent* event)
         return;
 
     if (term_.resize(cols, rows)) {
+        traceResize(cols, rows);
         emit gridResized(cols, rows);
         emit scrollRangeChanged(maxScrollOffset()); // M14：reflow 改变历史行数
         setScrollOffset(scrollOffset_);             // 夹取

@@ -22,6 +22,7 @@
 #include <QWidget>
 #include <QString>
 
+#include <cstdio>
 #include <functional>
 #include <string>
 #include <string_view>
@@ -136,10 +137,24 @@ private:
      */
     [[nodiscard]] ZzLineView lineViewAtVisibleRow(int row) const;
 
+    /**
+     * @brief 操作留痕（ZZCORE_SPIKE_TRACE 启用时）：记录一次 feed。
+     * @param data 喂入的原始字节。
+     */
+    void traceFeed(std::string_view data);
+
+    /**
+     * @brief 操作留痕（ZZCORE_SPIKE_TRACE 启用时）：记录一次网格 resize。
+     * @param cols 新列数。
+     * @param rows 新行数。
+     */
+    void traceResize(int cols, int rows);
+
     ZzTerminal                      term_;     ///< 终端模拟器（Native 后端）。
     std::function<void(std::string)> writeFn_; ///< 输入字节写出回调。
     int                             cellWidth_  = 1; ///< 单格像素宽。
     int                             cellHeight_ = 1; ///< 单格像素高。
     int                             cellAscent_ = 0; ///< 基线 ascent（drawText 用）。
     int scrollOffset_ = 0; ///< 滚动偏移（0 = 底部最新）。
+    std::FILE* trace_ = nullptr; ///< 留痕文件（env ZZCORE_SPIKE_TRACE 指定）。
 };
