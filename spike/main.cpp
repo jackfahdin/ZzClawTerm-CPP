@@ -21,7 +21,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QFileInfo>
-#include <QHBoxLayout>
+#include <QGridLayout>
 #include <QInputDialog>
 #include <QLineEdit>
 #include <QScrollBar>
@@ -171,16 +171,33 @@ int runLocal(bool probe)
     QObject::connect(&scrollBar, &QScrollBar::valueChanged, &widget,
                      [&widget](int v) { widget.setScrollOffset(widget.maxScrollOffset() - v); });
 
+    // M17b：横向滚动条（不换行模式）；range 跟随 maxCellCount - cols。
+    QScrollBar hScrollBar(Qt::Horizontal);
+    hScrollBar.setRange(0, 0);
+    QObject::connect(&widget, &ZzCoreViewWidget::hScrollRangeChanged,
+                     &hScrollBar, [&hScrollBar, &widget](int max) {
+                         hScrollBar.setMaximum(max);
+                         hScrollBar.setValue(widget.hScrollOffset());
+                     });
+    QObject::connect(&widget, &ZzCoreViewWidget::hScrollOffsetChanged,
+                     &hScrollBar, &QScrollBar::setValue);
+    QObject::connect(&hScrollBar, &QScrollBar::valueChanged, &widget,
+                     &ZzCoreViewWidget::setHScrollOffset);
+
     // window 堆分配：layout 会把栈对象 widget/scrollBar 收编为其子对象，
     // 栈展开时它们自重父摘除，window 由 QApplication 析构期统一回收，
     // 避免栈上 window 先析构删除子对象导致的 double free。
     auto* window = new QWidget;
-    QHBoxLayout layout(window);
+    QGridLayout layout(window);
     layout.setContentsMargins(0, 0, 0, 0);
-    layout.addWidget(&widget, 1);
-    layout.addWidget(&scrollBar);
+    layout.setSpacing(0);
+    layout.addWidget(&widget, 0, 0, 1, 1);
+    layout.addWidget(&scrollBar, 0, 1, 1, 1);
+    layout.addWidget(&hScrollBar, 1, 0, 1, 1);
+    layout.setColumnStretch(0, 1);
+    layout.setRowStretch(0, 1);
     window->resize(widget.sizeHint().width() + scrollBar.sizeHint().width(),
-                   widget.sizeHint().height());
+                   widget.sizeHint().height() + hScrollBar.sizeHint().height());
     window->show();
     return QCoreApplication::exec();
 }
@@ -347,16 +364,33 @@ int runSsh(const QString& target, const QString& keyPath, bool probe)
     QObject::connect(&scrollBar, &QScrollBar::valueChanged, &widget,
                      [&widget](int v) { widget.setScrollOffset(widget.maxScrollOffset() - v); });
 
+    // M17b：横向滚动条（不换行模式）；range 跟随 maxCellCount - cols。
+    QScrollBar hScrollBar(Qt::Horizontal);
+    hScrollBar.setRange(0, 0);
+    QObject::connect(&widget, &ZzCoreViewWidget::hScrollRangeChanged,
+                     &hScrollBar, [&hScrollBar, &widget](int max) {
+                         hScrollBar.setMaximum(max);
+                         hScrollBar.setValue(widget.hScrollOffset());
+                     });
+    QObject::connect(&widget, &ZzCoreViewWidget::hScrollOffsetChanged,
+                     &hScrollBar, &QScrollBar::setValue);
+    QObject::connect(&hScrollBar, &QScrollBar::valueChanged, &widget,
+                     &ZzCoreViewWidget::setHScrollOffset);
+
     // window 堆分配：layout 会把栈对象 widget/scrollBar 收编为其子对象，
     // 栈展开时它们自重父摘除，window 由 QApplication 析构期统一回收，
     // 避免栈上 window 先析构删除子对象导致的 double free。
     auto* window = new QWidget;
-    QHBoxLayout layout(window);
+    QGridLayout layout(window);
     layout.setContentsMargins(0, 0, 0, 0);
-    layout.addWidget(&widget, 1);
-    layout.addWidget(&scrollBar);
+    layout.setSpacing(0);
+    layout.addWidget(&widget, 0, 0, 1, 1);
+    layout.addWidget(&scrollBar, 0, 1, 1, 1);
+    layout.addWidget(&hScrollBar, 1, 0, 1, 1);
+    layout.setColumnStretch(0, 1);
+    layout.setRowStretch(0, 1);
     window->resize(widget.sizeHint().width() + scrollBar.sizeHint().width(),
-                   widget.sizeHint().height());
+                   widget.sizeHint().height() + hScrollBar.sizeHint().height());
     window->show();
     return QCoreApplication::exec();
 }
