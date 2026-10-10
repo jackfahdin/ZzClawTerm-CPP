@@ -261,6 +261,7 @@ void ZzCoreViewWidget::paintSelectionOnWrappedRow(QPainter& painter, int row)
         return;
     painter.fillRect(c0 * cellWidth_, row * cellHeight_,
                      (c1 - c0 + 1) * cellWidth_, cellHeight_, palette().highlight());
+    painter.save(); // 高亮画笔不外泄——后续行的文本仍用默认前景色
     painter.setPen(palette().highlightedText().color());
     const ZzLineView line = lineViewAtVisibleRow(row);
     const int y = row * cellHeight_ + cellAscent_;
@@ -269,6 +270,7 @@ void ZzCoreViewWidget::paintSelectionOnWrappedRow(QPainter& painter, int row)
         if (!cell.text.empty())
             painter.drawText(c * cellWidth_, y, QString::fromStdString(cell.text));
     }
+    painter.restore();
 }
 
 void ZzCoreViewWidget::paintSelectionOnStitchedRow(QPainter& painter, std::size_t idx,
@@ -303,6 +305,7 @@ void ZzCoreViewWidget::paintSelectionOnStitchedRow(QPainter& painter, std::size_
         return;
     painter.fillRect(w0 * cellWidth_, row * cellHeight_,
                      (w1 - w0 + 1) * cellWidth_, cellHeight_, palette().highlight());
+    painter.save(); // 高亮画笔不外泄——后续行的文本仍用默认前景色
     painter.setPen(palette().highlightedText().color());
     const int y = row * cellHeight_ + cellAscent_;
     for (int c = w0 + hScrollOffset_;
@@ -312,6 +315,7 @@ void ZzCoreViewWidget::paintSelectionOnStitchedRow(QPainter& painter, std::size_
             painter.drawText((c - hScrollOffset_) * cellWidth_, y,
                              QString::fromStdString(cell.text));
     }
+    painter.restore();
 }
 
 void ZzCoreViewWidget::keyPressEvent(QKeyEvent* event)

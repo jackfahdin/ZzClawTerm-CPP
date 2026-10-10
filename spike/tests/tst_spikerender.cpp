@@ -98,6 +98,12 @@ private slots:
      * 保持（引擎空选区 extend 语义会吞锚点）；拖拽越过右缘横向步进。
      */
     void mouseSelectsText();
+
+    /**
+     * @brief case 9（M17b 修复回归）：选区高亮不污染 painter 画笔——
+     * 选中行下方的行仍应以正常文本色可见（grab 像素级验证）。
+     */
+    void selectionKeepsRowsBelowVisible();
 };
 
 void TstSpikeRender::feedRendersMark()
@@ -313,6 +319,31 @@ void TstSpikeRender::mouseSelectsText()
     QVERIFY(widget.hScrollOffset() > 0);
     QTest::mouseRelease(&widget, Qt::LeftButton, {}, QPoint(10 * cw + 5, rowY));
     QCOMPARE(QGuiApplication::clipboard()->text(), QString(10, 'x')); // [0,10)
+}
+
+void TstSpikeRender::selectionKeepsRowsBelowVisible()
+{
+    ZzCoreViewWidget widget;
+    widget.terminal().resize(10, 4);
+    widget.feedForTest("aaaaa\r\nbbbbb\r\n"); // 行 0：aaaaa；行 1：bbbbb
+    const QFontMetrics fm(widget.font());
+    const int cw = qMax(1, fm.horizontalAdvance(QLatin1Char('M')));
+    const int ch = qMax(1, fm.height());
+    widget.resize(10 * cw, 4 * ch);
+
+    // 选中行 0 的一段（引擎逻辑坐标直喂；鼠标路径由 case 8 覆盖）
+    widget.terminal().setSelection(ZzLogicalPos{0, 0}, ZzLogicalPos{0, 3});
+
+    // 修复前：高亮重绘把 pen 留在 highlightedText（亮主题下≈底色），
+    // 其后的行 1 文本以近底色绘制 → 不可见。
+    const QImage img = widget.grab().toImage();
+    const QRgb base = widget.palette().base().color().rgba();
+    bool hasInk = false;
+    for (int x = 0; x < 5 * cw && !hasInk; ++x)
+        for (int y = 1 * ch; y < 2 * ch && !hasInk; ++y)
+            if (img.pixel(x, y) != base)
+                hasInk = true;
+    QVERIFY2(hasInk, "选区下方行的文本应保持可见");
 }
 
 QTEST_MAIN(TstSpikeRender)
