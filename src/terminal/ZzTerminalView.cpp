@@ -2,6 +2,7 @@
 
 #include <atomic>
 
+#include <QtCore/QDebug>
 #include <QtCore/QDir>
 #include <QtCore/QEvent>
 #include <QtCore/QStandardPaths>
@@ -184,6 +185,14 @@ void ZzTerminalView::applySettings(const ZzAppSettings &settings)
     if (encoding) {
         m_decoder = QStringDecoder(*encoding);
         m_encoder = QStringEncoder(*encoding);
+    } else {
+        // 无效编码（Qt6 无 Qt5Compat 时 GBK 等东亚编码 encodingForName 返回
+        // nullopt）：保持默认态 decoder 会让 decode 静默返空串导致黑屏，
+        // 回退 UTF-8 保底。Qt5Compat 引入后 GBK 自动激活（Z2 立项）。
+        qWarning() << "ZzTerminalView: 无法识别的编码" << settings.encoding()
+                   << "，收发转码回退 UTF-8";
+        m_decoder = QStringDecoder(QStringConverter::Utf8);
+        m_encoder = QStringEncoder(QStringConverter::Utf8);
     }
     // 配色方案表与 historyLines 运行时调整属 Z2 收口（Z1 固定默认
     // 调色板 + 构造期 10000 行）；设置值仍读存，切换配色暂不生效。

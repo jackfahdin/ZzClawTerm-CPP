@@ -60,6 +60,25 @@ private slots:
                  QString("abc"));
     }
 
+    void fontSizeChangeRecomputesGrid()
+    {
+        ZzCoreTerminalWidget widget;
+        widget.show(); // 隐藏 widget 的 resize() 不投递 QResizeEvent（Qt 延迟到 show）
+        const int cw = widget.cellWidthForTest();
+        const int ch = widget.cellHeightForTest();
+        widget.resize(100 * cw, 30 * ch);
+        QCOMPARE(widget.gridCols(), 100);
+
+        // 字号变大 → cell 像素变大 → 同控件尺寸下列数必须重算变小，
+        // 且走 gridResized 信号链路（宿主据此转发 transport->resize）。
+        QSignalSpy spy(&widget, &ZzCoreTerminalWidget::gridResized);
+        const int ps = widget.font().pointSize();
+        widget.setTerminalFontPointSize(ps > 0 ? ps * 4 : 48);
+        QVERIFY(widget.gridCols() < 100);
+        QVERIFY(spy.count() >= 1);
+        QCOMPARE(spy.last().at(0).toInt(), widget.gridCols());
+    }
+
     void unwrapModeStitchesChains()
     {
         ZzCoreTerminalWidget widget;

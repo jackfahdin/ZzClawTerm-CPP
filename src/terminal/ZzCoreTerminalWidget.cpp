@@ -191,6 +191,30 @@ void ZzCoreTerminalWidget::setTerminalFontPointSize(int pointSize)
     f.setPointSize(pointSize);
     setFont(f);
     updateCellMetrics();
+
+    // 字号变更改变 cell 像素尺寸，按当前控件尺寸重算网格并沿用 resizeEvent
+    // 的既有链路口径（gridResized → 宿主去抖转发 transport->resize）；
+    // resizeEvent 是控件尺寸驱动，这里是字体驱动，换算与发射逻辑一致。
+    // 隐藏时 size() 是 Qt 默认 100x30 占位尺寸（resizeEvent 也只在可见后
+    // 投递），此时不重算——show 后的 resizeEvent 会按新 cell 尺寸一次算准。
+    if (isVisible()) {
+        const int    cols    = qMax(1, size().width() / cellWidth_);
+        const int    rows    = qMax(1, size().height() / cellHeight_);
+        const ZzSize current = term_.size();
+        if (cols != current.cols || rows != current.rows) {
+            const int maxHBefore = maxHScrollOffset(); // resize 前横向口径快照
+            if (term_.resize(cols, rows)) {
+                traceResize(cols, rows);
+                emit gridResized(cols, rows);
+                emit scrollRangeChanged(maxScrollOffset());
+                if (maxHScrollOffset() != maxHBefore)
+                    emit hScrollRangeChanged(maxHScrollOffset());
+                setScrollOffset(scrollOffset_); // 夹取
+                followCursorHorizontally();
+            }
+        }
+    }
+
     updateGeometry();
     update();
 }

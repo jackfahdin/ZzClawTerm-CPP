@@ -127,6 +127,10 @@ void ZzLocalPtyTransport::open(const ZzTransportEndpoint &endpoint)
 #else
     // Unix：master fd 非阻塞 + QSocketNotifier 边界触发读循环
     fcntl(m_pty->masterFd(), F_SETFL, O_NONBLOCK);
+    // 重连安全：EOF 路径（handleShellExit）只停用旧 notifier 不销毁，
+    // 重建前先 delete 防多次重连累积泄漏（this 子对象，delete 即脱钩）。
+    delete m_notifier;
+    m_notifier = nullptr;
     m_notifier = new QSocketNotifier(m_pty->masterFd(), QSocketNotifier::Read, this);
     connect(m_notifier, &QSocketNotifier::activated, this, [this]() {
         std::byte buf[64 * 1024];
