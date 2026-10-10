@@ -47,6 +47,10 @@ zz_add_qtest(tst_ZzAppSettings unit/tst_ZzAppSettings.cpp)
 zz_add_qtest(tst_ZzTransportRegistry unit/tst_ZzTransportRegistry.cpp)
 zz_add_qtest(tst_ZzLocalPtyTransport unit/tst_ZzLocalPtyTransport.cpp)
 zz_add_qtest(tst_ZzTerminalView unit/tst_ZzTerminalView.cpp)
+# Z1 新前端：ZzCoreTerminalWidget 暂未进 ZzClawTermApp 源清单（任务范围限定，
+# Z2 接线时挪入 src/CMakeLists.txt），此处把实现 .cpp 直接编进测试目标。
+zz_add_qtest(tst_ZzCoreTerminalWidget unit/tst_ZzCoreTerminalWidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/terminal/ZzCoreTerminalWidget.cpp)
 zz_add_qtest(tst_ZzTabManager unit/tst_ZzTabManager.cpp)
 zz_add_qtest(tst_ZzSplitContainer unit/tst_ZzSplitContainer.cpp)
 zz_add_qtest(tst_ZzSshTransport unit/tst_ZzSshTransport.cpp)
