@@ -311,14 +311,24 @@ void TstSpikeRender::mouseSelectsText()
     // 修复前必败：press 锚点被 extendSelection 的空选区分支吞掉
     QVERIFY2(widget.terminal().hasSelection(), "拖拽中应保持按下锚点的选区");
     QTest::mouseRelease(&widget, Qt::LeftButton, {}, QPoint(9 * cw + 1, rowY));
-    QCOMPARE(QGuiApplication::clipboard()->text(), QString(9, 'x')); // [0,9) 半开
+    // 端点粒度：悬停格计入选区（extent = 格索引+1）→ [0,10)
+    QCOMPARE(QGuiApplication::clipboard()->text(), QString(10, 'x'));
 
     // 拖拽越过右缘：横向视口步进，选区扩到屏外列
     QTest::mousePress(&widget, Qt::LeftButton, {}, QPoint(0 * cw + 1, rowY));
     QTest::mouseMove(&widget, QPoint(10 * cw + 5, rowY)); // 越过右缘
     QVERIFY(widget.hScrollOffset() > 0);
     QTest::mouseRelease(&widget, Qt::LeftButton, {}, QPoint(10 * cw + 5, rowY));
-    QCOMPARE(QGuiApplication::clipboard()->text(), QString(10, 'x')); // [0,10)
+    QCOMPARE(QGuiApplication::clipboard()->text(), QString(11, 'x')); // [0,11)
+
+    // 越缘步进到最大偏移：行末字符必须可选中（extent 钳到 N 而非 N-1）
+    widget.setHScrollOffset(0); // 上一手势残留 offset=1，不归零则锚点偏 1 列
+    QTest::mousePress(&widget, Qt::LeftButton, {}, QPoint(0 * cw + 1, rowY));
+    for (int i = 0; i < 16; ++i) // 每次 move 步进一格；钳到 maxHScrollOffset=15
+        QTest::mouseMove(&widget, QPoint(10 * cw + 5, rowY));
+    QCOMPARE(widget.hScrollOffset(), 15);
+    QTest::mouseRelease(&widget, Qt::LeftButton, {}, QPoint(10 * cw + 5, rowY));
+    QCOMPARE(QGuiApplication::clipboard()->text(), QString(25, 'x')); // [0,25) 全行
 }
 
 void TstSpikeRender::selectionKeepsRowsBelowVisible()

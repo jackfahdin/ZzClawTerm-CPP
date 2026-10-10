@@ -613,7 +613,15 @@ void ZzCoreViewWidget::mouseMoveEvent(QMouseEvent* event)
         // 引擎 extendSelection 对空选区（anchor==extent）会重置锚点
         //（Terminal.cpp 注释明示的设计语义），故锚点自行保存、
         // 每次移动以 setSelection(锚点, 当前) 重放全量选区。
-        term_.setSelection(selAnchor_, logicalPosAtPixel(event->pos()));
+        // 端点粒度：悬停格计入选区（半开区间 [start, end)）——向前选
+        // extent = 格索引+1，向后选锚点侧 +1，保证行末/边缘格可选中。
+        const ZzLogicalPos cur = logicalPosAtPixel(event->pos());
+        const bool forward = cur.line > selAnchor_.line
+                             || (cur.line == selAnchor_.line && cur.col >= selAnchor_.col);
+        if (forward)
+            term_.setSelection(selAnchor_, {cur.line, cur.col + 1});
+        else
+            term_.setSelection({selAnchor_.line, selAnchor_.col + 1}, cur);
         update();
         event->accept();
         return;
