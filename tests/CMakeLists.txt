@@ -58,8 +58,7 @@ zz_add_qtest(tst_ZzSessionPanel unit/tst_ZzSessionPanel.cpp)
 zz_add_qtest(tst_ZzSftpPanel unit/tst_ZzSftpPanel.cpp)
 # Z1 摘除（QTermWidget 直构造）——随特性收口重写回（总体设计 §6）
 # zz_add_qtest(tst_ZzSettingsPage unit/tst_ZzSettingsPage.cpp)
-# Z1 摘除（QTermWidget 直构造）——随特性收口重写回（总体设计 §6）
-# zz_add_qtest(tst_ZzScrollbackBridge unit/tst_ZzScrollbackBridge.cpp)
+zz_add_qtest(tst_ZzScrollbackBridge unit/tst_ZzScrollbackBridge.cpp)
 zz_add_qtest(tst_ZzErrorUi unit/tst_ZzErrorUi.cpp)
 zz_add_qtest(tst_ZzAppShell unit/tst_ZzAppShell.cpp)
 zz_add_qtest(tst_ZzClawTermModule unit/tst_ZzClawTermModule.cpp)

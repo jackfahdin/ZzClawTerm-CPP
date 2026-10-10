@@ -55,16 +55,16 @@
 
 ## 技术栈
 
-- **语言 / 构建**：C++20，CMake ≥ 3.25 + CMakePresets（Ninja / VS2022 生成器）
+- **语言 / 构建**：C++20，CMake ≥ 3.26 + CMakePresets（Ninja / VS2022 生成器）
 - **UI**：Qt 6（≥ 6.8，Core/Gui/Widgets/Network/Test/Xml/Multimedia）
-- **终端组件**：ZzTermWidget（终端解析 + 绘制，含本地 pty）
+- **终端引擎**：ZzTermCore（自研终端引擎，Native 后端静态消费；Z1 起接管终端前端 ZzCoreTerminalWidget）
 - **应用框架**：ZzPureTools（无边框窗口、模块路由、导航、Fluent 主题）
 - **SSH**：ZzSshCore（自研，libssh2 的 Qt 异步封装，worker 线程泵模型；libssh2 由其嵌套子模块提供，CMake 移植版）+ OpenSSL（vendored 预编译 bundle，缺失时回退系统 OpenSSL）
 - **日志引擎**：LZ4（温层压缩）、ZSTD（冷层压缩）、SQLite amalgamation（冷层存储 + FTS5，vendored，Public Domain）
 
 ## 架构与目录结构
 
-本仓库只做装配：复用 ZzTermWidget（终端）、ZzPureTools（框架）、ZzSshCore（SSH）三大件，自身承载会话模型、凭据存储、日志引擎与 Dock UI 胶水层。可扩展点走注册接口：
+本仓库只做装配：复用 ZzTermCore（终端引擎）、ZzPureTools（框架）、ZzSshCore（SSH）三大件，自身承载会话模型、凭据存储、日志引擎与 Dock UI 胶水层。可扩展点走注册接口：
 
 - `ZzTransportInterface`：传输协议抽象（SSH / 本地 PTY 已实现，未来协议走同一注册路径）
 - `ZzPanelInterface`：Dock 面板抽象（会话面板、SFTP 面板）
@@ -100,7 +100,7 @@ third_party/          第三方依赖（见下文"子模块"）
 前置条件：
 
 - Qt ≥ 6.8，通过环境变量 `QT_ROOT` 指向 Qt 前缀（如 `~/Qt/6.8.2/gcc_64`）
-- CMake ≥ 3.25；Linux/macOS 用 Ninja，Windows 用 Visual Studio 2022
+- CMake ≥ 3.26；Linux/macOS 用 Ninja，Windows 用 Visual Studio 2022
 - 初始化子模块：`git submodule update --init --recursive`
 - `third_party/sqlite` 为 vendored amalgamation（非 git 子模块），缺失时需按冷层实现计划任务 1 的步骤下载（配置阶段会给出明确报错指引）
 
@@ -149,7 +149,8 @@ test preset 与 configure preset 同名；失败时自动输出详细日志（`o
 
 | 路径 | 说明 |
 | ---- | ---- |
-| `ZzTermWidget` | 终端组件（解析 + 绘制 + 本地 pty） |
+| `ZzTermCore` | 终端引擎（自研；pin 在 contour 分支，Native 后端静态消费，contour 后端 OFF，其测试不在本工程编译） |
+| `ZzTermWidget` | 旧终端组件（qtermwidget fork）——Z1 起不参与构建，仅保留供配色/键位资源取值对照，Z4 删除 |
 | `ZzPureTools` | 应用框架（无边框窗口、路由、导航、Fluent 主题） |
 | `ZzSshCore` | libssh2 的 Qt 异步封装（自研；libssh2 CMake 移植版为其嵌套子模块，静态构建，OpenSSL 加密后端） |
 | `openssl` | vendored 预编译 bundle（缺失时回退系统 OpenSSL） |
