@@ -18,3 +18,7 @@
 	url = https://github.com/facebook/zstd.git
 	branch = v1.5.7
 	shallow = true
+[submodule "third_party/ZzTermCore"]
+	path = third_party/ZzTermCore
+	url = git@github.com:jackfahdin/ZzTermCore.git
+	branch = contour

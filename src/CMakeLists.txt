@@ -86,6 +86,8 @@ target_link_libraries(ZzClawTermApp
         Qt6::Widgets
         Qt6::Network
         ZzQTermWidget::qtermwidget
+        ZzTerm::ZzTermCore
+        ZzTerm::Pty
         ZzPureTools
         Zz::FluentUI
         ZzSshCore

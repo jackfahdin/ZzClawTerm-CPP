@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.26)
 
 project(ZzClawTerm VERSION 0.1.0 LANGUAGES CXX)
 
@@ -33,6 +33,14 @@ set(ZZQTERMWIDGET_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
 set(ZZQTERMWIDGET_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(ZZQTERMWIDGET_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/ZzTermWidget)
+
+# ZzTermCore（终端引擎，Z1）：Native 后端静态消费，contour OFF
+#（spike 实证的静态链接约束）；引擎自带测试不在本工程编译
+#（其五项基线在 ZzTermCore 仓库自保）。
+zz_require_submodule(third_party/ZzTermCore)
+set(ZZTERM_WITH_CONTOUR OFF CACHE BOOL "" FORCE)
+set(ZZTERM_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/ZzTermCore)
 
 # ZzPureTools（应用框架）：仓库根即工程根（平铺布局），直接引入。
 # 注意库内存在同名组件子目录 third_party/ZzPureTools/ZzPureTools，勿做
