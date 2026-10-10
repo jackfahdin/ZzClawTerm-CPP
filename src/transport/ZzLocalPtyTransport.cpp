@@ -1,16 +1,14 @@
 #include "ZzLocalPtyTransport.h"
 
 #include <QtCore/QSocketNotifier>
-#include <QtCore/QThread>
 
-#include <cstdio>
 #include <span>
 #include <string>
 
 #include "ZzPty.h"
 
 #if defined(Q_OS_WIN)
-#include <QtCore/QCoreApplication>
+#include <QtCore/QThread>
 
 #include <atomic>
 #else
@@ -34,8 +32,11 @@ QString zzDefaultShell()
 
 #if defined(Q_OS_WIN)
 /**
- * @brief ConPTY 读取线程：HANDLE 管道无 QSocketNotifier 可用，
- * 阻塞 read 循环，读到数据/EOF 经 QueuedConnection 投递回 GUI 线程。
+ * @brief ConPTY 读取线程：HANDLE 管道无 QSocketNotifier 可用。
+ * ZzPty::read 在 Windows 侧为 PeekNamedPipe 非阻塞轮询（无数据返回 -1），
+ * 线程循环 poll + msleep(1) 让出时间片；数据/EOF 直接 emit，信号经
+ * AutoConnection 跨线程自动排队回 GUI 线程（连接上下文是 transport，
+ * sender 销毁不影响已排队事件向 receiver 的安全投递）。
  */
 class ZzPtyReaderThread : public QThread
 {
@@ -50,19 +51,16 @@ public:
         while (!stopping.load()) {
             const std::ptrdiff_t n = pty->read(std::span<std::byte>(buf, sizeof(buf)));
             if (n > 0) {
-                const QByteArray data(reinterpret_cast<const char *>(buf), (qsizetype)n);
-                QMetaObject::invokeMethod(qApp, [this, data]() {
-                    emit dataReady(data);
-                }, Qt::QueuedConnection);
+                emit dataReady(QByteArray(reinterpret_cast<const char *>(buf),
+                                          (qsizetype)n));
                 continue;
             }
             if (n == 0) { // EOF（子进程退出）
-                QMetaObject::invokeMethod(qApp, [this]() { emit eofReached(); },
-                                          Qt::QueuedConnection);
+                emit eofReached();
                 return;
             }
-            // -1：Windows 侧 ERROR_NO_DATA 等价 EAGAIN——阻塞读不会出现，
-            // 防御性让出时间片
+            // -1：ERROR_NO_DATA 等价 EAGAIN——PeekNamedPipe 轮询暂无数据，
+            // 让出时间片避免空转
             QThread::msleep(1);
         }
     }
@@ -90,6 +88,17 @@ void ZzLocalPtyTransport::open(const ZzTransportEndpoint &endpoint)
     }
     setState(State::Connecting);
     m_closing = false;
+
+    // Z1 过渡：ptyqt 时代在 env 缺失时注入 TERM/COLORTERM（GUI 启动场景系统
+    // env 通常无 TERM，缺注入会让 shell 内 vim/less/htop 退化）。进程级
+    // qputenv 是权宜；根治（ZzPtyConfig 加 env/cwd 字段）已立项为 ZzTermCore
+    // 侧后续里程碑。cwd（home 目录）同理无法在本层修，仅登记，不改行为。
+    if (qEnvironmentVariableIsEmpty("TERM")) {
+        qputenv("TERM", endpoint.terminalType.toUtf8());
+    }
+    if (qEnvironmentVariableIsEmpty("COLORTERM")) {
+        qputenv("COLORTERM", "truecolor");
+    }
 
     const QString shell = endpoint.shellProgram.isEmpty()
         ? zzDefaultShell()
@@ -145,6 +154,12 @@ void ZzLocalPtyTransport::handleShellExit()
     if (!m_pty || state() == State::Disconnected) {
         return;
     }
+#if !defined(Q_OS_WIN)
+    // EOF 态 master fd 恒"可读"，不停用 notifier 会持续触发忙循环烧 CPU
+    if (m_notifier) {
+        m_notifier->setEnabled(false);
+    }
+#endif
     if (!m_closing) {
         setState(State::Disconnected);
         const auto code = m_pty->tryWait();
@@ -176,15 +191,15 @@ void ZzLocalPtyTransport::close()
     }
     m_closing = true;
 #if defined(Q_OS_WIN)
+    // 轮询线程（PeekNamedPipe 非阻塞）靠 stopping 退出，~1ms 量级；
+    // 先 join 再 delete 线程，最后才释放 PTY——保证线程存续期 pty 指针有效
     if (m_reader) {
         m_reader->stopping.store(true);
-        m_pty.reset(); // ClosePseudoConsole 使阻塞读断裂退出
         m_reader->wait(2000);
         delete m_reader;
         m_reader = nullptr;
-    } else {
-        m_pty.reset();
     }
+    m_pty.reset();
 #else
     delete m_notifier;
     m_notifier = nullptr;
