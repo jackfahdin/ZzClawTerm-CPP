@@ -1,16 +1,25 @@
 #include "ZzLocalPtyTransport.h"
 
-#include <QtCore/QDir>
-#include <QtCore/QIODevice>
-#include <QtCore/QProcess>
-#include <QtCore/QProcessEnvironment>
+#include <QtCore/QSocketNotifier>
+#include <QtCore/QThread>
 
-#include "ptyqt.h"
-#include "iptyprocess.h"
+#include <cstdio>
+#include <span>
+#include <string>
+
+#include "ZzPty.h"
+
+#if defined(Q_OS_WIN)
+#include <QtCore/QCoreApplication>
+
+#include <atomic>
+#else
+#include <fcntl.h>
+#endif
 
 namespace {
 
-/** @brief 按平台取默认本地 shell（与 ZzTermWidget example 同一套规则）。 */
+/** @brief 按平台取默认本地 shell（沿用 ptyqt 时代规则）。 */
 QString zzDefaultShell()
 {
 #if defined(Q_OS_WIN)
@@ -22,6 +31,47 @@ QString zzDefaultShell()
 }
 
 } // namespace
+
+#if defined(Q_OS_WIN)
+/**
+ * @brief ConPTY 读取线程：HANDLE 管道无 QSocketNotifier 可用，
+ * 阻塞 read 循环，读到数据/EOF 经 QueuedConnection 投递回 GUI 线程。
+ */
+class ZzPtyReaderThread : public QThread
+{
+    Q_OBJECT
+public:
+    ZzPty *pty = nullptr;   ///< 借用，生命周期由 transport 保证
+    std::atomic<bool> stopping = false;
+
+    void run() override
+    {
+        std::byte buf[64 * 1024];
+        while (!stopping.load()) {
+            const std::ptrdiff_t n = pty->read(std::span<std::byte>(buf, sizeof(buf)));
+            if (n > 0) {
+                const QByteArray data(reinterpret_cast<const char *>(buf), (qsizetype)n);
+                QMetaObject::invokeMethod(qApp, [this, data]() {
+                    emit dataReady(data);
+                }, Qt::QueuedConnection);
+                continue;
+            }
+            if (n == 0) { // EOF（子进程退出）
+                QMetaObject::invokeMethod(qApp, [this]() { emit eofReached(); },
+                                          Qt::QueuedConnection);
+                return;
+            }
+            // -1：Windows 侧 ERROR_NO_DATA 等价 EAGAIN——阻塞读不会出现，
+            // 防御性让出时间片
+            QThread::msleep(1);
+        }
+    }
+
+signals:
+    void dataReady(const QByteArray &data);
+    void eofReached();
+};
+#endif
 
 ZzLocalPtyTransport::ZzLocalPtyTransport(QObject *parent)
     : ZzTransportInterface(parent)
@@ -41,67 +91,80 @@ void ZzLocalPtyTransport::open(const ZzTransportEndpoint &endpoint)
     setState(State::Connecting);
     m_closing = false;
 
-    m_pty.reset(PtyQt::createPtyProcess());
     const QString shell = endpoint.shellProgram.isEmpty()
         ? zzDefaultShell()
         : endpoint.shellProgram;
-
-    // PTY 输出 → dataReceived（终端显示方向）
-    connect(m_pty->notifier(), &QIODevice::readyRead, this, [this]() {
-        const QByteArray data = m_pty->readAll();
-        if (!data.isEmpty()) {
-            emit dataReceived(data);
-        }
-    });
-    // 子进程退出 → 被动断开。
-    // 注意：ptyqt 各后端通知机制不一致——Windows ConPty 由 ptyqt 主动发射
-    // notifier 的 aboutToClose；Unix 后端的 notifier 是内部 ShellProcess
-    // （QProcess 子类），子进程退出只发 QProcess::finished，不发 aboutToClose，
-    // 且 Unix 后端不维护 exitCode。两条路径共用同一处理，靠状态守卫去重。
-    auto handleShellExit = [this]() {
-        if (!m_pty || state() == State::Disconnected) {
-            return;
-        }
-        const QByteArray rest = m_pty->readAll();
-        if (!rest.isEmpty()) {
-            emit dataReceived(rest);
-        }
-        if (!m_closing) {
-            setState(State::Disconnected);
-            emit disconnected(tr("本地 shell 已退出（退出码 %1）")
-                                  .arg(m_pty->exitCode()));
-        }
-    };
-    connect(m_pty->notifier(), &QIODevice::aboutToClose, this, handleShellExit);
-    if (auto *proc = qobject_cast<QProcess *>(m_pty->notifier())) {
-        connect(proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-                this, std::move(handleShellExit));
-    }
-
-    if (!m_pty->startProcess(shell, {}, QDir::homePath(),
-                             QProcessEnvironment::systemEnvironment().toStringList(),
-                             static_cast<qint16>(endpoint.cols),
-                             static_cast<qint16>(endpoint.rows))) {
-        const QString reason = m_pty->lastError();
-        m_pty.reset();
+    ZzPtyConfig config;
+    config.argv = {shell.toStdString()};
+    config.cols = endpoint.cols;
+    config.rows = endpoint.rows;
+    config.rawMode = false; // 交互会话保持 slave echo/opost/isig
+    m_pty = ZzPty::spawn(config);
+    if (!m_pty) {
         setState(State::Disconnected);
-        emit errorOccurred(2001, tr("启动本地 shell 失败：%1").arg(reason));
+        emit errorOccurred(2001, tr("启动本地 shell 失败（ZzPty spawn）"));
         return;
     }
+
+#if defined(Q_OS_WIN)
+    // ConPTY：HANDLE 管道走读取线程
+    m_reader = new ZzPtyReaderThread();
+    m_reader->pty = m_pty.get();
+    connect(m_reader, &ZzPtyReaderThread::dataReady, this,
+            [this](const QByteArray &data) { emit dataReceived(data); });
+    connect(m_reader, &ZzPtyReaderThread::eofReached, this,
+            [this]() { handleShellExit(); });
+    m_reader->start();
+#else
+    // Unix：master fd 非阻塞 + QSocketNotifier 边界触发读循环
+    fcntl(m_pty->masterFd(), F_SETFL, O_NONBLOCK);
+    m_notifier = new QSocketNotifier(m_pty->masterFd(), QSocketNotifier::Read, this);
+    connect(m_notifier, &QSocketNotifier::activated, this, [this]() {
+        std::byte buf[64 * 1024];
+        for (;;) {
+            const std::ptrdiff_t n =
+                m_pty->read(std::span<std::byte>(buf, sizeof(buf)));
+            if (n > 0) {
+                emit dataReceived(QByteArray(reinterpret_cast<const char *>(buf),
+                                             (qsizetype)n));
+                continue;
+            }
+            if (n == 0) { // EOF（子进程退出归一）
+                handleShellExit();
+            }
+            break; // -1（含 EAGAIN）：本轮读完
+        }
+    });
+#endif
+
     setState(State::Connected);
+}
+
+void ZzLocalPtyTransport::handleShellExit()
+{
+    if (!m_pty || state() == State::Disconnected) {
+        return;
+    }
+    if (!m_closing) {
+        setState(State::Disconnected);
+        const auto code = m_pty->tryWait();
+        emit disconnected(tr("本地 shell 已退出（退出码 %1）")
+                              .arg(code ? *code : -1));
+    }
 }
 
 void ZzLocalPtyTransport::write(const QByteArray &data)
 {
     if (m_pty && state() == State::Connected) {
-        m_pty->write(data);
+        m_pty->writeAll(std::as_bytes(std::span<const char>(data.constData(),
+                                                            data.size())));
     }
 }
 
 void ZzLocalPtyTransport::resize(int cols, int rows)
 {
     if (m_pty) {
-        m_pty->resize(static_cast<qint16>(cols), static_cast<qint16>(rows));
+        m_pty->resize(cols, rows);
     }
 }
 
@@ -112,7 +175,24 @@ void ZzLocalPtyTransport::close()
         return;
     }
     m_closing = true;
-    m_pty->kill();
-    m_pty.reset();
+#if defined(Q_OS_WIN)
+    if (m_reader) {
+        m_reader->stopping.store(true);
+        m_pty.reset(); // ClosePseudoConsole 使阻塞读断裂退出
+        m_reader->wait(2000);
+        delete m_reader;
+        m_reader = nullptr;
+    } else {
+        m_pty.reset();
+    }
+#else
+    delete m_notifier;
+    m_notifier = nullptr;
+    m_pty.reset(); // 析构 SIGHUP 子进程并回收
+#endif
     setState(State::Disconnected);
 }
+
+#if defined(Q_OS_WIN)
+#include "ZzLocalPtyTransport.moc"
+#endif
