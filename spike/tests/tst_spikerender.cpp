@@ -13,6 +13,7 @@
  * - case 7（M17b）：不换行模式——拼接行渲染、横向滚动窗口、选区复制完整长行。
  */
 
+#include <QClipboard>
 #include <QSocketNotifier>
 #include <QtTest>
 
@@ -91,6 +92,12 @@ private slots:
      * @brief case 7（M17b）：不换行模式——拼接行渲染 + 横向滚动 + 选区复制完整长行。
      */
     void unwrapMode();
+
+    /**
+     * @brief case 8（M17b 修复回归）：鼠标拖拽选区——按下锚点在拖动中
+     * 保持（引擎空选区 extend 语义会吞锚点）；拖拽越过右缘横向步进。
+     */
+    void mouseSelectsText();
 };
 
 void TstSpikeRender::feedRendersMark()
@@ -276,6 +283,36 @@ void TstSpikeRender::unwrapMode()
     QCOMPARE(widget.hScrollOffset(), 0);
     QCOMPARE(widget.maxHScrollOffset(), 0);
     QCOMPARE(widget.visibleLineTextForTest(0), QString("xxxxxxxxxx"));
+}
+
+void TstSpikeRender::mouseSelectsText()
+{
+    ZzCoreViewWidget widget;
+    widget.terminal().resize(10, 4);
+    widget.feedForTest("xxxxxxxxxxxxxxxxxxxxxxxxx\r\nb\r\n");
+    widget.setUnwrapMode(true);
+
+    // 像素尺寸对齐网格，鼠标映射确定（口径同 updateCellMetrics）。
+    const QFontMetrics fm(widget.font());
+    const int cw = qMax(1, fm.horizontalAdvance(QLatin1Char('M')));
+    const int ch = qMax(1, fm.height());
+    widget.resize(10 * cw, 4 * ch);
+
+    // 拼接行 0 = 25 x 落在显示行 1（viewTop = 3-0-4 = -1，行 0 留白）。
+    const int rowY = 1 * ch + 1;
+    QTest::mousePress(&widget, Qt::LeftButton, {}, QPoint(0 * cw + 1, rowY));
+    QTest::mouseMove(&widget, QPoint(9 * cw + 1, rowY)); // 拖到窗口右端列 9
+    // 修复前必败：press 锚点被 extendSelection 的空选区分支吞掉
+    QVERIFY2(widget.terminal().hasSelection(), "拖拽中应保持按下锚点的选区");
+    QTest::mouseRelease(&widget, Qt::LeftButton, {}, QPoint(9 * cw + 1, rowY));
+    QCOMPARE(QGuiApplication::clipboard()->text(), QString(9, 'x')); // [0,9) 半开
+
+    // 拖拽越过右缘：横向视口步进，选区扩到屏外列
+    QTest::mousePress(&widget, Qt::LeftButton, {}, QPoint(0 * cw + 1, rowY));
+    QTest::mouseMove(&widget, QPoint(10 * cw + 5, rowY)); // 越过右缘
+    QVERIFY(widget.hScrollOffset() > 0);
+    QTest::mouseRelease(&widget, Qt::LeftButton, {}, QPoint(10 * cw + 5, rowY));
+    QCOMPARE(QGuiApplication::clipboard()->text(), QString(10, 'x')); // [0,10)
 }
 
 QTEST_MAIN(TstSpikeRender)

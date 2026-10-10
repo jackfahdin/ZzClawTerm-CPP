@@ -587,8 +587,8 @@ void ZzCoreViewWidget::mousePressEvent(QMouseEvent* event)
 {
     if (event->button() == Qt::LeftButton) {
         selecting_ = true;
-        const ZzLogicalPos p = logicalPosAtPixel(event->pos());
-        term_.setSelection(p, p);
+        selAnchor_ = logicalPosAtPixel(event->pos());
+        term_.setSelection(selAnchor_, selAnchor_);
         update();
         event->accept();
         return;
@@ -599,7 +599,17 @@ void ZzCoreViewWidget::mousePressEvent(QMouseEvent* event)
 void ZzCoreViewWidget::mouseMoveEvent(QMouseEvent* event)
 {
     if (selecting_) {
-        term_.extendSelection(logicalPosAtPixel(event->pos()));
+        // 不换行模式：拖拽越过左右缘时横向视口步进（选中屏外内容的通道）。
+        if (unwrapMode_) {
+            if (event->pos().x() >= width())
+                setHScrollOffset(hScrollOffset_ + 1);
+            else if (event->pos().x() < 0)
+                setHScrollOffset(hScrollOffset_ - 1);
+        }
+        // 引擎 extendSelection 对空选区（anchor==extent）会重置锚点
+        //（Terminal.cpp 注释明示的设计语义），故锚点自行保存、
+        // 每次移动以 setSelection(锚点, 当前) 重放全量选区。
+        term_.setSelection(selAnchor_, logicalPosAtPixel(event->pos()));
         update();
         event->accept();
         return;

@@ -284,5 +284,7 @@ private:
     bool unwrapMode_ = false;   ///< 不换行显示模式（M17b）。
     int  hScrollOffset_ = 0;    ///< 横向滚动偏移（列，0 = 左端）。
     bool selecting_ = false;    ///< 鼠标拖拽选区进行中。
+    ZzLogicalPos selAnchor_{};  ///< 拖拽锚点（按下点；引擎空选区 extend 语义
+                              ///< 会吞锚点，须自行保存并经 setSelection 重放）。
     std::FILE* trace_ = nullptr; ///< 留痕文件（env ZZCORE_SPIKE_TRACE 指定）。
 };
