@@ -47,18 +47,19 @@ zz_add_qtest(tst_ZzAppSettings unit/tst_ZzAppSettings.cpp)
 zz_add_qtest(tst_ZzTransportRegistry unit/tst_ZzTransportRegistry.cpp)
 zz_add_qtest(tst_ZzLocalPtyTransport unit/tst_ZzLocalPtyTransport.cpp)
 zz_add_qtest(tst_ZzTerminalView unit/tst_ZzTerminalView.cpp)
-# Z1 新前端：ZzCoreTerminalWidget 暂未进 ZzClawTermApp 源清单（任务范围限定，
-# Z2 接线时挪入 src/CMakeLists.txt），此处把实现 .cpp 直接编进测试目标。
-zz_add_qtest(tst_ZzCoreTerminalWidget unit/tst_ZzCoreTerminalWidget.cpp
-    ${CMAKE_SOURCE_DIR}/src/terminal/ZzCoreTerminalWidget.cpp)
+zz_add_qtest(tst_ZzCoreTerminalWidget unit/tst_ZzCoreTerminalWidget.cpp)
 zz_add_qtest(tst_ZzTabManager unit/tst_ZzTabManager.cpp)
-zz_add_qtest(tst_ZzSplitContainer unit/tst_ZzSplitContainer.cpp)
+# Z1 摘除（QTermWidget 直构造）——随特性收口重写回（总体设计 §6）
+# zz_add_qtest(tst_ZzSplitContainer unit/tst_ZzSplitContainer.cpp)
 zz_add_qtest(tst_ZzSshTransport unit/tst_ZzSshTransport.cpp)
-zz_add_qtest(tst_ZzConnectFlow unit/tst_ZzConnectFlow.cpp)
+# Z1 摘除（QTermWidget 直构造）——随特性收口重写回（总体设计 §6）
+# zz_add_qtest(tst_ZzConnectFlow unit/tst_ZzConnectFlow.cpp)
 zz_add_qtest(tst_ZzSessionPanel unit/tst_ZzSessionPanel.cpp)
 zz_add_qtest(tst_ZzSftpPanel unit/tst_ZzSftpPanel.cpp)
-zz_add_qtest(tst_ZzSettingsPage unit/tst_ZzSettingsPage.cpp)
-zz_add_qtest(tst_ZzScrollbackBridge unit/tst_ZzScrollbackBridge.cpp)
+# Z1 摘除（QTermWidget 直构造）——随特性收口重写回（总体设计 §6）
+# zz_add_qtest(tst_ZzSettingsPage unit/tst_ZzSettingsPage.cpp)
+# Z1 摘除（QTermWidget 直构造）——随特性收口重写回（总体设计 §6）
+# zz_add_qtest(tst_ZzScrollbackBridge unit/tst_ZzScrollbackBridge.cpp)
 zz_add_qtest(tst_ZzErrorUi unit/tst_ZzErrorUi.cpp)
 zz_add_qtest(tst_ZzAppShell unit/tst_ZzAppShell.cpp)
 zz_add_qtest(tst_ZzClawTermModule unit/tst_ZzClawTermModule.cpp)

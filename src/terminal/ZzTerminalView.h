@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QtCore/QStringConverter>
 #include <QtWidgets/QWidget>
 
 #include "ZzResizeDebouncer.h"
@@ -8,14 +9,16 @@
 
 class QLabel;
 class QPushButton;
-class QTermWidget;
 class ZzAppSettings;
+class ZzCoreTerminalWidget;
 class ZzScrollbackBridge;
 
 /**
- * @brief 单标签终端视图：组合 QTermWidget 与一个传输实例（规格 §七）。
+ * @brief 单标签终端视图：组合 ZzCoreTerminalWidget（ZzTerminal 引擎前端）
+ *        与一个传输实例（规格 §七）。
  *
- * 职责只有胶水：远端输出 → recvData，键盘输入 → transport->write，
+ * 职责只有胶水：远端输出 → 转码（会话编码 → UTF-8）→ recvData，
+ * 键盘输入 → 转码（UTF-8 → 会话编码）→ transport->write，
  * 尺寸变化 → 去抖合并后 transport->resize；外加设置应用、错误/断开信号透传，
  * 以及标签内错误横幅（出错显示、重试重连、连通自动隐藏，规格 §八）。
  * 不拥有传输的所有权以外的语义——传输以本视图为 QObject 父对象随视图销毁。
@@ -35,8 +38,8 @@ public:
     /** @brief 当前绑定的传输（可空）。 */
     [[nodiscard]] ZzTransportInterface *transport() const;
 
-    /** @brief 内部 QTermWidget（测试与滚动历史桥使用）。 */
-    [[nodiscard]] QTermWidget *termWidget() const;
+    /** @brief 内部 ZzCoreTerminalWidget（测试与滚动历史桥使用）。 */
+    [[nodiscard]] ZzCoreTerminalWidget *termWidget() const;
 
     /** @brief 当前滚动历史桥（可空，enableScrollback 后非空；测试与状态查询用）。 */
     [[nodiscard]] ZzScrollbackBridge *scrollbackBridge() const;
@@ -50,7 +53,8 @@ public:
     /** @brief 当前传输状态（未绑定视为 Disconnected）。 */
     [[nodiscard]] ZzTransportInterface::State transportState() const;
 
-    /** @brief 应用全局设置：字号、编码、配色、内存历史行数。 */
+    /** @brief 应用全局设置：字号、编码（含收发转码器重建）；
+     *        配色与内存历史行数 Z1 读存暂不生效（Z2 收口）。 */
     void applySettings(const ZzAppSettings &settings);
 
     /** @brief 启用滚动历史桥：为该会话创建 ZzLogEngine 并接线（ZzTabManager 开会话时调用）。 */
@@ -89,11 +93,13 @@ private:
     void showErrorBanner(const QString &message);
     void hideErrorBanner();
 
-    QTermWidget *m_term = nullptr;
+    ZzCoreTerminalWidget *m_term = nullptr;
     ZzTransportInterface *m_transport = nullptr;
     ZzResizeDebouncer m_resizeDebouncer{150}; ///< resize 尾随去抖：拖拽期间合并，停手后发最终尺寸
     ZzTransportEndpoint m_lastEndpoint;  ///< 最近一次 open 参数（重连用）
     QString m_encoding;                  ///< 状态栏展示的编码名
+    QStringDecoder m_decoder;            ///< 收方向：会话编码 → UTF-8（feed 前）
+    QStringEncoder m_encoder;            ///< 发方向：UTF-8 → 会话编码（write 前）
     ZzScrollbackBridge *m_scrollbackBridge = nullptr; ///< 滚动历史桥（可空，以本视图为父）
     QWidget *m_errorBanner = nullptr;  ///< 标签内错误提示条（默认隐藏）
     QLabel *m_errorLabel = nullptr;

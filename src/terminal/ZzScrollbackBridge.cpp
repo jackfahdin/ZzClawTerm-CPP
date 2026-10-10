@@ -1,32 +1,44 @@
 #include "ZzScrollbackBridge.h"
 
-#include "qtermwidget.h"
 #include "log/ZzLogEngine.h"
 #include "log/ZzLogLine.h"
+#include "terminal/ZzCoreTerminalWidget.h"
 
-ZzScrollbackBridge::ZzScrollbackBridge(QTermWidget *term, ZzLogEngine *engine,
-                                       QObject *parent)
+ZzScrollbackBridge::ZzScrollbackBridge(ZzCoreTerminalWidget *term,
+                                       ZzLogEngine *engine, QObject *parent)
     : QObject(parent)
     , m_term(term)
     , m_engine(engine)
 {
-    // 追加路径：dupDisplayOutput 逐行吐 UTF-8，去掉行尾换行后入热层
-    connect(m_term, &QTermWidget::dupDisplayOutput, this,
-            [this](const char *data, int len) {
-                QString line = QString::fromUtf8(data, len);
-                while (line.endsWith(QLatin1Char('\n'))
-                       || line.endsWith(QLatin1Char('\r'))) {
-                    line.chop(1);
-                }
-                m_engine->appendLine({line, QByteArray()});
-            });
+    // 追加路径（M17 口径）：feed 后 HistoryView 代计数差分——新增的
+    // scrollout 定稿行取纯文本追加。比 dupDisplayOutput 显示镜像干净
+    //（无重绘噪音）；读回注入留 Z2。
+    connect(m_term, &ZzCoreTerminalWidget::contentFed, this, [this]() {
+        const auto &hv = m_term->terminal().historyView();
+        const std::size_t count = hv.lineCount();
+        const std::uint64_t dropped = hv.droppedLineCount();
+        // 绝对序号对账：seen 为已追加的绝对行号（含 dropped 偏移）
+        std::uint64_t newest = dropped + count;
+        while (m_seenLineNo < newest) {
+            const std::size_t idx = (std::size_t)(m_seenLineNo - dropped);
+            if (idx >= count) // dropped 跳变超过未同步段：跳过缺口
+                break;
+            const ZzLineView line = hv.lineAt(idx);
+            QString text;
+            const int n = line.cellCount();
+            for (int c = 0; c < n; ++c)
+                text += QString::fromStdString(line.cellAt(c).text);
+            while (text.endsWith(QLatin1Char(' ')))
+                text.chop(1);
+            m_engine->appendLine({text, QByteArray()});
+            ++m_seenLineNo;
+        }
+        if (m_seenLineNo < dropped) // 缺口跳齐
+            m_seenLineNo = dropped;
+    });
     // 降级路径（规格 §八）：引擎 I/O 失败 → 状态栏提示，不打断终端
     connect(m_engine, &ZzLogEngine::degradedToMemoryOnly, this,
             [this](const QString &reason) { emit degraded(reason); });
-    // 读回路径（规格 §5.4）：滚动越顶时由计划 05 的注入机制回调索取更老的行
-    m_term->setHistoryProvider([this](qint64 beforeLine, int maxLines) {
-        return readOlderLines(beforeLine, maxLines);
-    });
 }
 
 QStringList ZzScrollbackBridge::readOlderLines(qint64 beforeLine,

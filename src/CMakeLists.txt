@@ -31,6 +31,8 @@ set(ZZCLAWTERM_APP_SOURCES
     settings/ZzSettingsPage.cpp
     terminal/ZzTerminalView.h
     terminal/ZzTerminalView.cpp
+    terminal/ZzCoreTerminalWidget.h
+    terminal/ZzCoreTerminalWidget.cpp
     terminal/ZzScrollbackBridge.h
     terminal/ZzScrollbackBridge.cpp
     tab/ZzTabManager.h
@@ -85,7 +87,6 @@ target_link_libraries(ZzClawTermApp
         Qt6::Core
         Qt6::Widgets
         Qt6::Network
-        ZzQTermWidget::qtermwidget
         ZzTerm::ZzTermCore
         ZzTerm::Pty
         ZzPureTools

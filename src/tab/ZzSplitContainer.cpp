@@ -19,7 +19,7 @@ ZzSplitContainer::ZzSplitContainer(QWidget *parent)
     m_root->setChildrenCollapsible(false);
     layout->addWidget(m_root);
 
-    // 焦点跟踪：窗格内 QTermWidget（其焦点代理到内部显示件）才是实际焦点接收者，
+    // 焦点跟踪：窗格内终端组件才是实际焦点接收者，
     // 统一经 qApp 焦点变化反查所属窗格
     connect(qApp, &QApplication::focusChanged, this,
             [this](QWidget *, QWidget *now) {
@@ -71,7 +71,7 @@ void ZzSplitContainer::splitFocused(Qt::Orientation orientation,
         split->addWidget(newView);
     }
     m_focused = newView;
-    newView->setFocus(); // 经焦点代理落到 QTermWidget
+    newView->setFocus(); // 落到窗格内终端组件
     emit focusedViewChanged(newView);
 }
 

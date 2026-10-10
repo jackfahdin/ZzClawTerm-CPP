@@ -25,6 +25,7 @@ zz_add_perf_test(tst_PerfSettings tst_PerfSettings.cpp)
 zz_add_perf_test(tst_PerfTabLifecycle tst_PerfTabLifecycle.cpp)
 zz_add_perf_test(tst_PerfSplit tst_PerfSplit.cpp)
 zz_add_perf_test(tst_PerfConnectFlow tst_PerfConnectFlow.cpp)
-zz_add_perf_test(tst_PerfScrollback tst_PerfScrollback.cpp)
+# Z1 摘除（QTermWidget 直构造）——随特性收口重写回（总体设计 §6）
+# zz_add_perf_test(tst_PerfScrollback tst_PerfScrollback.cpp)
 zz_add_perf_test(tst_PerfSftpPanel tst_PerfSftpPanel.cpp)
 zz_add_perf_test(tst_PerfWorkspaceShell tst_PerfWorkspaceShell.cpp)

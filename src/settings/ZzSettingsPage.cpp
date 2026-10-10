@@ -8,7 +8,6 @@
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QSpinBox>
 
-#include "qtermwidget.h"
 #include "settings/ZzAppSettings.h"
 
 ZzSettingsPage::ZzSettingsPage(ZzAppSettings *settings, QWidget *parent)
@@ -45,7 +44,7 @@ ZzSettingsPage::ZzSettingsPage(ZzAppSettings *settings, QWidget *parent)
     m_formLayout->addRow(new QLabel(this), m_fontSizeSpin);
 
     m_colorSchemeCombo = new QComboBox(this);
-    m_colorSchemeCombo->addItems(QTermWidget::availableColorSchemes());
+    m_colorSchemeCombo->addItems(ZzAppSettings::availableColorSchemes());
     m_colorSchemeCombo->setCurrentText(m_settings->colorScheme());
     m_formLayout->addRow(new QLabel(this), m_colorSchemeCombo);
 

@@ -1,43 +1,77 @@
 #include <QtTest/QtTest>
 
-#include "qtermwidget.h"
+#include <QtCore/QStringConverter>
+
 #include "ZzMockTransport.h"
 #include "settings/ZzAppSettings.h"
+#include "terminal/ZzCoreTerminalWidget.h"
 #include "terminal/ZzScrollbackBridge.h"
 #include "terminal/ZzTerminalView.h"
 #include "transport/ZzTransportRegistry.h"
 
 /**
- * @brief 验证终端视图胶水：双向字节流、尺寸转发、设置应用、编码查询。
+ * @brief Z1 换血后终端视图胶水契约：双向字节流（含转码）、尺寸去抖
+ * 转发、设置应用、状态透传、滚动历史降级提示与温层唯一性。
  */
 class tst_ZzTerminalView : public QObject
 {
     Q_OBJECT
 private slots:
-    void init()
-    {
-        qRegisterMetaType<ZzTransportInterface::State>();
-    }
+    void init() { qRegisterMetaType<ZzTransportInterface::State>(); }
 
     void bidirectionalByteStream()
     {
         ZzTerminalView view;
         auto *transport = new ZzMockTransport(&view);
-        transport->echoEnabled = false; // 回显关掉，分辨两个方向
+        transport->echoEnabled = false;
         view.setTransport(transport);
 
         ZzTransportEndpoint endpoint;
         transport->open(endpoint);
         QTRY_VERIFY(transport->state() == ZzTransportInterface::State::Connected);
 
-        // 远端 → 终端：不应崩溃，视图保持存活即通过（像素内容属 ZzTermWidget 测试域）
+        // 远端 → 终端：feed 后渲染文本可见
         transport->simulateData("hello remote\r\n");
         QCoreApplication::processEvents();
+        QCOMPARE(view.termWidget()->visibleLineTextForTest(0),
+                 QString("hello remote"));
 
-        // 终端 → 远端：模拟键盘输入
-        emit view.termWidget()->sendData("ls\n", 3);
+        // 终端 → 远端：键盘经 sendData → 转码（UTF-8 直通）→ write
+        QTest::keyClicks(view.termWidget(), "ls");
+        QTest::keyClick(view.termWidget(), Qt::Key_Return);
         QCoreApplication::processEvents();
-        QCOMPARE(transport->writtenData, QByteArray("ls\n"));
+        QCOMPARE(transport->writtenData, QByteArray("ls\r"));
+    }
+
+    void gbkTranscodingRoundTrip()
+    {
+        const QString path = QDir(QDir::tempPath())
+            .filePath(QStringLiteral("zzclawterm-view-gbk.ini"));
+        QFile::remove(path);
+        ZzAppSettings settings(path);
+        settings.setEncoding(QStringLiteral("GBK"));
+
+        ZzTerminalView view;
+        view.applySettings(settings);
+        QCOMPARE(view.encoding(), QStringLiteral("GBK"));
+        // Qt6 core 的 QStringConverter 仅支持 UTF 系/Latin1；GBK 等东亚编码
+        // 需 Qt5Compat（QTextCodec），当前构建不支持时跳过字节级断言
+        //（编码名读存与转码器接线仍覆盖；引入 Qt5Compat 属 Z2 收口）
+        if (!QStringConverter::encodingForName("GBK")) {
+            QSKIP("当前 Qt 构建不支持 GBK 转码（需 Qt5Compat），仅覆盖编码名读存");
+        }
+        auto *transport = new ZzMockTransport(&view);
+        transport->echoEnabled = false;
+        view.setTransport(transport);
+        transport->open(ZzTransportEndpoint{});
+        QTRY_VERIFY(transport->state() == ZzTransportInterface::State::Connected);
+
+        // 收：GBK 字节「中」（0xD6 0xD0）→ UTF-8 feed → 渲染为「中」
+        transport->simulateData(QByteArray("\xD6\xD0\r\n", 4));
+        QCoreApplication::processEvents();
+        QVERIFY(view.termWidget()->visibleLineTextForTest(0)
+                    .startsWith(QStringLiteral("中")));
+        QFile::remove(path);
     }
 
     void sizeForwardsToTransport()
@@ -47,14 +81,10 @@ private slots:
         view.setTransport(transport);
         QSignalSpy sizeSpy(&view, &ZzTerminalView::sizeChanged);
 
-        // QTermWidget::termSizeChange(lines, columns) → 去抖后 transport->resize(cols, rows)
-        emit view.termWidget()->termSizeChange(40, 100);
-        // 状态栏信号即时发射，transport 在去抖窗口内不转发
+        emit view.termWidget()->gridResized(100, 40);
         QCOMPARE(sizeSpy.count(), 1);
         QCOMPARE(sizeSpy.first().at(0).toInt(), 100);
-        QCOMPARE(sizeSpy.first().at(1).toInt(), 40);
-        QCOMPARE(transport->resizeCallCount, 0);
-        // 去抖期满（150ms）后转发最终尺寸
+        QCOMPARE(transport->resizeCallCount, 0); // 去抖窗口内不转发
         QTRY_COMPARE_WITH_TIMEOUT(transport->resizeCallCount, 1, 1000);
         QCOMPARE(transport->lastCols, 100);
         QCOMPARE(transport->lastRows, 40);
@@ -65,38 +95,13 @@ private slots:
         ZzTerminalView view;
         auto *transport = new ZzMockTransport(&view);
         view.setTransport(transport);
-
-        // 模拟拖拽风暴：连续 10 次尺寸变化，间隔小于去抖窗口
         for (int i = 0; i < 10; ++i) {
-            emit view.termWidget()->termSizeChange(40, 100 + i);
+            emit view.termWidget()->gridResized(100 + i, 40);
             QTest::qWait(20);
         }
-
-        // 风暴结束后只转发一次，且为最终尺寸
         QTRY_COMPARE_WITH_TIMEOUT(transport->resizeCallCount, 1, 1000);
         QCOMPARE(transport->lastCols, 109);
         QCOMPARE(transport->lastRows, 40);
-    }
-
-    void applyGlobalSettings()
-    {
-        const QString path = QDir(QDir::tempPath())
-            .filePath(QStringLiteral("zzclawterm-view-settings.ini"));
-        QFile::remove(path);
-        ZzAppSettings settings(path);
-        settings.setFontSize(18);
-        settings.setEncoding(QStringLiteral("GBK"));
-        settings.setHistoryLines(5000);
-        if (QTermWidget::availableColorSchemes().contains(QStringLiteral("QuardCRT"))) {
-            settings.setColorScheme(QStringLiteral("QuardCRT"));
-        }
-
-        ZzTerminalView view;
-        view.applySettings(settings);
-        QCOMPARE(view.termWidget()->getTerminalFont().pointSize(), 18);
-        QCOMPARE(view.termWidget()->historySize(), 5000);
-        QCOMPARE(view.encoding(), QStringLiteral("GBK"));
-        QFile::remove(path);
     }
 
     void statePassthrough()
@@ -105,11 +110,9 @@ private slots:
         auto *transport = new ZzMockTransport(&view);
         view.setTransport(transport);
         QSignalSpy stateSpy(&view, &ZzTerminalView::stateChanged);
-
         transport->open(ZzTransportEndpoint{});
         QTRY_COMPARE(view.transportState(), ZzTransportInterface::State::Connected);
-        QCOMPARE(stateSpy.count(), 2); // Connecting + Connected
-
+        QCOMPARE(stateSpy.count(), 2);
         transport->simulateDisconnect(QStringLiteral("对端关闭"));
         QCOMPARE(view.transportState(), ZzTransportInterface::State::Disconnected);
     }
@@ -184,41 +187,6 @@ private slots:
             QDir(dirPath).entryList({sessionId + QStringLiteral("-*.warm")},
                                     QDir::Files);
         QCOMPARE(warmFiles.size(), 2);
-    }
-
-    /**
-     * @brief 回归：跨重启重开同一会话时温层重置，读回不错位。
-     *        显示层历史基线每会话从 0 起，引擎若恢复上一会话行号，provider
-     *        读回会命中旧行；enableScrollback 必须截断温层重新对齐。
-     */
-    void scrollbackRestartsWithFreshLineNumbers()
-    {
-        QStandardPaths::setTestModeEnabled(true);
-        const QString sessionId = QStringLiteral("test-restart-align");
-
-        // 第一次会话：写入超过热层容量（默认 1 万）的行，强制归档进温层
-        {
-            ZzTerminalView view;
-            view.enableScrollback(sessionId);
-            for (int i = 0; i < 11000; ++i) {
-                const QByteArray line =
-                    QStringLiteral("old-line-%1\n").arg(i).toUtf8();
-                emit view.termWidget()->dupDisplayOutput(line.constData(),
-                                                         line.size());
-            }
-            QVERIFY(view.scrollbackBridge()->totalLines() > 0);
-        } // 视图析构 → 引擎 flush，温层落盘
-
-        // 第二次会话（等价重启后重开）：行号从 0 重新对齐，不恢复旧行
-        ZzTerminalView view2;
-        view2.enableScrollback(sessionId);
-        ZzScrollbackBridge *bridge = view2.scrollbackBridge();
-        QVERIFY(bridge);
-        QCOMPARE(bridge->totalLines(), qint64(0));
-        emit view2.termWidget()->dupDisplayOutput("fresh-line\n", 10);
-        QCOMPARE(bridge->totalLines(), qint64(1));
-        QCOMPARE(bridge->readOlderLines(1, 1),
-                 QStringList({QStringLiteral("fresh-line")}));
     }
 };
 

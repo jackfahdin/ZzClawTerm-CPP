@@ -27,12 +27,9 @@ function(zz_require_submodule path)
     endif()
 endfunction()
 
-# ZzTermWidget（终端组件）：关闭其自带示例/测试/安装规则
-zz_require_submodule(third_party/ZzTermWidget)
-set(ZZQTERMWIDGET_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
-set(ZZQTERMWIDGET_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(ZZQTERMWIDGET_INSTALL OFF CACHE BOOL "" FORCE)
-add_subdirectory(third_party/ZzTermWidget)
+# Z1：ZzTermWidget（qtermwidget fork）已摘除——终端前端由
+# ZzCoreTerminalWidget（ZzTermCore 引擎）接管；子模块目录保留在
+# third_party/ 供配色/键位资源取值对照，不再参与构建。
 
 # ZzTermCore（终端引擎，Z1）：Native 后端静态消费，contour OFF
 #（spike 实证的静态链接约束）；引擎自带测试不在本工程编译

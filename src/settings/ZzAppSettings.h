@@ -3,6 +3,7 @@
 #include <QtCore/QByteArray>
 #include <QtCore/QObject>
 #include <QtCore/QString>
+#include <QtCore/QStringList>
 
 class QSettings;
 
@@ -34,9 +35,16 @@ public:
     [[nodiscard]] int fontSize() const;
     void setFontSize(int fontSize);
 
-    /** @brief 默认配色方案名（QTermWidget::availableColorSchemes 之一），默认 "Linux"。 */
+    /** @brief 默认配色方案名（availableColorSchemes() 之一），默认 "Linux"。 */
     [[nodiscard]] QString colorScheme() const;
     void setColorScheme(const QString &colorScheme);
+
+    /**
+     * @brief 已知配色方案名清单（设置页/会话配置/菜单的选项来源）。
+     * @note Z1 过渡：QTermWidget 摘除后为固定内置清单，渲染端固定默认调色板，
+     *       切换暂不生效；真实方案表与运行时切换属 Z2 收口。
+     */
+    [[nodiscard]] static QStringList availableColorSchemes();
 
     /** @brief 终端内存历史行数上限（ZzLogEngine 热层之外的屏幕侧缓存），默认 10000。 */
     [[nodiscard]] int historyLines() const;

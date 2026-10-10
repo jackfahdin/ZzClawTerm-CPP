@@ -14,8 +14,6 @@
 #include <ZzFluentUI/ZzThemeController.h>
 #include <ZzPureTools/ZzPureApplication.h>
 
-#include <qtermwidget.h>
-
 #include "ZzAppShell.h"
 #include "dialog/ZzAboutDialog.h"
 #include "settings/ZzAppSettings.h"
@@ -59,7 +57,7 @@ ZzMenuBarService::ZzMenuBarService(QMenuBar *menuBar,
 
 QStringList ZzMenuBarService::curatedColorSchemes()
 {
-    const QStringList available = QTermWidget::availableColorSchemes();
+    const QStringList available = ZzAppSettings::availableColorSchemes();
     QStringList result;
     for (const char *name : kCuratedSchemes) {
         const QString qname = QString::fromLatin1(name);

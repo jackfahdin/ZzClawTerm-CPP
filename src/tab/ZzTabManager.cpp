@@ -8,8 +8,8 @@
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QTabBar>
 
-#include "qtermwidget.h"
 #include "settings/ZzAppSettings.h"
+#include "terminal/ZzCoreTerminalWidget.h"
 #include "terminal/ZzTerminalView.h"
 #include "transport/ZzSshTransport.h"
 #include "transport/ZzTransportRegistry.h"
@@ -56,13 +56,12 @@ ZzTabManager::ZzTabManager(QWidget *parent)
         }
         emit currentStateChanged(view->transportState());
         emit currentEncodingChanged(view->encoding());
-        emit currentSizeChanged(view->termWidget()->screenColumnsCount(),
-                                view->termWidget()->screenLinesCount());
+        emit currentSizeChanged(view->termWidget()->gridCols(),
+                                view->termWidget()->gridRows());
         emit currentTunnelCountChanged(m_tabTunnelCounts.value(view, 0));
     });
 
-    // 分屏快捷键（WidgetWithChildrenShortcut：终端内焦点也生效；
-    // Ctrl+Shift 双修饰键不会被 QTermWidget 的 ShortcutOverride 吞掉）
+    // 分屏快捷键（WidgetWithChildrenShortcut：终端内焦点也生效）
     auto addShortcut = [this](const QKeySequence &key,
                               std::function<void()> slot) {
         auto *shortcut = new QShortcut(key, this);
@@ -368,8 +367,8 @@ void ZzTabManager::wireContainer(ZzSplitContainer *container)
                 emit currentStateChanged(view->transportState());
                 emit currentEncodingChanged(view->encoding());
                 emit currentSizeChanged(
-                    view->termWidget()->screenColumnsCount(),
-                    view->termWidget()->screenLinesCount());
+                    view->termWidget()->gridCols(),
+                    view->termWidget()->gridRows());
                 emit currentTunnelCountChanged(m_tabTunnelCounts.value(view, 0));
             });
 }
@@ -457,12 +456,12 @@ ZzTransportEndpoint ZzTabManager::endpointFor(const ZzSessionProfile &profile) c
         endpoint.portForwards = profile.portForwards;
         endpoint.x11Forwarding = profile.x11Forwarding;
     }
-    // 初始行列以视图当前尺寸为准，open 后由 termSizeChange 信号持续同步
+    // 初始行列以视图当前尺寸为准，open 后由 gridResized 信号持续同步
     // （经 containerAt 取容器：嵌入标签页的页面是 QSplitter 包装，直接 cast 会落空）
     ZzSplitContainer *container = containerAt(currentIndex());
     ZzTerminalView *focused = container ? container->focusedView() : nullptr;
-    endpoint.cols = focused ? focused->termWidget()->screenColumnsCount() : 80;
-    endpoint.rows = focused ? focused->termWidget()->screenLinesCount() : 24;
+    endpoint.cols = focused ? focused->termWidget()->gridCols() : 80;
+    endpoint.rows = focused ? focused->termWidget()->gridRows() : 24;
     return endpoint;
 }
 

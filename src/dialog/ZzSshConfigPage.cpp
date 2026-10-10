@@ -19,8 +19,6 @@
 #include <QtWidgets/QTreeView>
 #include <QtWidgets/QVBoxLayout>
 
-#include <qtermwidget.h> // availableColorSchemes()
-
 #include "settings/ZzAppSettings.h"
 
 namespace {
@@ -204,7 +202,7 @@ ZzSshConfigPage::ZzSshConfigPage(QWidget *parent)
     // 首项「跟随全局」（itemData 空串，空串=跟随全局设置）；
     // 配色暂为死字段（连接流程只用全局），置灰占位
     m_colorSchemeCombo->addItem(QString(), QString());
-    m_colorSchemeCombo->addItems(QTermWidget::availableColorSchemes());
+    m_colorSchemeCombo->addItems(ZzAppSettings::availableColorSchemes());
     m_colorSchemeCombo->setEnabled(false);
     terminalForm->addRow(new QLabel(terminalPage), m_colorSchemeCombo);
     m_stack->addWidget(terminalPage);

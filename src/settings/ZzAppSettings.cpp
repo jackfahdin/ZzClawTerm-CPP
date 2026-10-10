@@ -76,6 +76,20 @@ void ZzAppSettings::setColorScheme(const QString &colorScheme)
     emit settingsChanged();
 }
 
+QStringList ZzAppSettings::availableColorSchemes()
+{
+    // Z1 过渡内置清单：与菜单精选集（ZzMenuBarService::kCuratedSchemes）
+    // 一致；渲染端固定默认调色板，方案表属 Z2 收口
+    return {
+        QStringLiteral("Linux"), QStringLiteral("Solarized"),
+        QStringLiteral("SolarizedLight"), QStringLiteral("Dracula"),
+        QStringLiteral("nord"), QStringLiteral("tokyonight"),
+        QStringLiteral("catppuccin-mocha"), QStringLiteral("catppuccin-latte"),
+        QStringLiteral("catppuccin-frappe"), QStringLiteral("catppuccin-macchiato"),
+        QStringLiteral("Tango"), QStringLiteral("Ubuntu"),
+    };
+}
+
 int ZzAppSettings::historyLines() const
 {
     return m_settings->value(QStringLiteral("terminal/historyLines"), 10000).toInt();

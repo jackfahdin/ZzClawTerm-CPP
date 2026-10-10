@@ -11,7 +11,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QVBoxLayout>
 
-#include "qtermwidget.h"
+#include "terminal/ZzCoreTerminalWidget.h"
 #include "log/ZzLogEngine.h"
 #include "settings/ZzAppSettings.h"
 #include "terminal/ZzScrollbackBridge.h"
@@ -19,11 +19,10 @@
 ZzTerminalView::ZzTerminalView(QWidget *parent)
     : QWidget(parent)
 {
-    m_term = new QTermWidget(this, this);
-    m_term->setScrollBarPosition(QTermWidget::ScrollBarRight);
-    // 最小终端网格：宽度不得窄于常见提示符长度、折行块不得高于屏幕，
-    // 杜绝极端小尺寸下 readline/conpty 重绘模型退化产生的显示残迹
-    m_term->setMinimumTerminalSize(24, 6);
+    m_term = new ZzCoreTerminalWidget(this);
+    setFocusProxy(m_term); // 视图级 setFocus（分屏焦点切换）落到终端组件
+    // Z1 暂缺：滚动条位置与最小终端网格约束（旧 setScrollBarPosition /
+    // setMinimumTerminalSize(24,6) 的等价物）登记为 Z2 特性 9
 
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -54,11 +53,11 @@ ZzTerminalView::ZzTerminalView(QWidget *parent)
 
     retranslateUi();
 
-    // 终端 → 传输（键盘输入方向）
-    connect(m_term, &QTermWidget::sendData, this,
-            [this](const char *data, int size) {
+    // 终端 → 传输（键盘输入方向，经转码层：UTF-8 → 会话编码）
+    connect(m_term, &ZzCoreTerminalWidget::sendData, this,
+            [this](const QByteArray &data) {
                 if (m_transport) {
-                    m_transport->write(QByteArray(data, size));
+                    m_transport->write(m_encoder.encode(QString::fromUtf8(data)));
                 }
             });
     // 终端尺寸 → 传输（尾随去抖 150ms：拖拽期间只记最终尺寸，停手后一次送达，
@@ -69,10 +68,10 @@ ZzTerminalView::ZzTerminalView(QWidget *parent)
                     m_transport->resize(cols, rows);
                 }
             });
-    connect(m_term, &QTermWidget::termSizeChange, this,
-            [this](int lines, int columns) {
-                m_resizeDebouncer.post(columns, lines);
-                emit sizeChanged(columns, lines);
+    connect(m_term, &ZzCoreTerminalWidget::gridResized, this,
+            [this](int cols, int rows) {
+                m_resizeDebouncer.post(cols, rows);
+                emit sizeChanged(cols, rows);
             });
 
     applySettings(ZzAppSettings::instance());
@@ -87,10 +86,11 @@ void ZzTerminalView::setTransport(ZzTransportInterface *transport)
     if (!m_transport) {
         return;
     }
-    // 传输 → 终端（远端输出方向）
+    // 传输 → 终端（远端输出方向，经转码层：会话编码 → UTF-8）
     connect(m_transport, &ZzTransportInterface::dataReceived, this,
             [this](const QByteArray &data) {
-                m_term->recvData(data.constData(), data.size());
+                const QString text = m_decoder.decode(data);
+                m_term->recvData(text.toUtf8());
             });
     connect(m_transport, &ZzTransportInterface::stateChanged, this,
             [this](ZzTransportInterface::State state) {
@@ -145,7 +145,7 @@ void ZzTerminalView::hideErrorBanner()
     m_errorBanner->hide();
 }
 
-QTermWidget *ZzTerminalView::termWidget() const
+ZzCoreTerminalWidget *ZzTerminalView::termWidget() const
 {
     return m_term;
 }
@@ -176,21 +176,19 @@ ZzTransportInterface::State ZzTerminalView::transportState() const
 
 void ZzTerminalView::applySettings(const ZzAppSettings &settings)
 {
-    QFont font = m_term->getTerminalFont();
-    font.setPointSize(settings.fontSize());
-    m_term->setTerminalFont(font);
+    m_term->setTerminalFontPointSize(settings.fontSize());
 
     m_encoding = settings.encoding();
     const auto encoding =
         QStringConverter::encodingForName(settings.encoding().toUtf8().constData());
     if (encoding) {
-        m_term->setTextCodec(QStringEncoder(*encoding));
+        m_decoder = QStringDecoder(*encoding);
+        m_encoder = QStringEncoder(*encoding);
     }
-
-    if (QTermWidget::availableColorSchemes().contains(settings.colorScheme())) {
-        m_term->setColorScheme(settings.colorScheme());
-    }
-    m_term->setHistorySize(settings.historyLines());
+    // 配色方案表与 historyLines 运行时调整属 Z2 收口（Z1 固定默认
+    // 调色板 + 构造期 10000 行）；设置值仍读存，切换配色暂不生效。
+    (void)settings.colorScheme();
+    (void)settings.historyLines();
 }
 
 void ZzTerminalView::enableScrollback(const QString &sessionId)
