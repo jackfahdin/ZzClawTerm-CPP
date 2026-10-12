@@ -15,9 +15,10 @@ class ZzLogEngine;
  * 追加路径（Z1 落盘换源）：contentFed 后对 HistoryView 做绝对行号差分——
  * 新增的 scrollout 定稿行取纯文本 appendLine（比旧 dupDisplayOutput 显示
  * 镜像干净，无重绘噪音；wrapped 折链按物理行落盘，与旧逐显示行口径一致）。
- * 读回路径：readOlderLines 委托引擎 getLines（夹取到当前可读窗口）保留，
- * 供 Z2 读回桥复用；显示层注入（旧 setHistoryProvider 接线）已随
- * QTermWidget 摘除，Z2 特性 3 重建。
+ * 读回路径（Z2 任务 5 重建）：widget 越顶信号 historyTopReached 触发
+ * injectOlderBlock——readOlderLines 委托引擎 getLines 取更早一块，经
+ * M19 原语 prependHistoryLines 注入 Core 历史最旧端（纯文本、无样式）；
+ * reflow/重组经 generation 侦测做差分游标回锚，不重复追加。
  * 降级路径：引擎 degradedToMemoryOnly → degraded 信号 → 状态栏提示（规格 §八）。
  */
 class ZzScrollbackBridge : public QObject
@@ -42,6 +43,15 @@ public:
     /** @brief 测试辅助：直接转发一次降级事件（等价引擎 I/O 失败）。 */
     void simulateDegradationForTest(const QString &reason);
 
+    /**
+     * @brief 从 LogEngine 读回一块更早历史注入 Core 最旧端（默认 200 行）。
+     *
+     * M19 减法口径：Core 最旧端的引擎绝对行号即 droppedLineCount() 基线
+     * 本身（基线 = 累计裁掉 − 累计注入归还，随注入回退），无需额外对账
+     * 成员。无更早历史或归还额度不足（Core 从未裁剪）时静默不动。
+     */
+    void injectOlderBlock(int maxLines = 200);
+
 signals:
     /** @brief 引擎降级为纯内存模式（规格 §八：提示用户，不影响终端交互）。 */
     void degraded(const QString &reason);
@@ -50,4 +60,5 @@ private:
     ZzCoreTerminalWidget *m_term;
     ZzLogEngine *m_engine;
     std::uint64_t m_seenLineNo = 0; ///< 追加对账游标：已落盘的绝对行号（含 dropped 偏移）
+    std::uint64_t m_lastGeneration = 0; ///< 上一帧历史代计数（reflow/重组侦测）
 };

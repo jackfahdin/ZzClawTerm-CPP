@@ -7,9 +7,11 @@
 #include <QtCore/QEvent>
 #include <QtCore/QStandardPaths>
 #include <QtCore/QStringConverter>
+#include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QScrollBar>
 #include <QtWidgets/QVBoxLayout>
 
 #include "terminal/ZzCoreTerminalWidget.h"
@@ -22,8 +24,7 @@ ZzTerminalView::ZzTerminalView(QWidget *parent)
 {
     m_term = new ZzCoreTerminalWidget(this);
     setFocusProxy(m_term); // 视图级 setFocus（分屏焦点切换）落到终端组件
-    // Z1 暂缺：滚动条位置与最小终端网格约束（旧 setScrollBarPosition /
-    // setMinimumTerminalSize(24,6) 的等价物）登记为 Z2 特性 9
+    // Z1 暂缺：最小终端网格约束（setMinimumTerminalSize(24,6) 等价物）登记为 Z2 特性 9
 
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -50,7 +51,38 @@ ZzTerminalView::ZzTerminalView(QWidget *parent)
         }
     });
     layout->addWidget(m_errorBanner);
-    layout->addWidget(m_term, 1);
+
+    // 终端 + 滚动条网格（Z2 任务 5）：纵条常驻，横条仅不换行模式出现
+    auto *grid = new QGridLayout();
+    grid->setContentsMargins(0, 0, 0, 0);
+    grid->setSpacing(0);
+    m_vbar = new QScrollBar(Qt::Vertical, this);
+    m_hbar = new QScrollBar(Qt::Horizontal, this);
+    m_hbar->hide(); // 仅不换行模式出现
+    grid->addWidget(m_term, 0, 0);
+    grid->addWidget(m_vbar, 0, 1);
+    grid->addWidget(m_hbar, 1, 0);
+    layout->addLayout(grid, 1);
+
+    // 滚动条 ⇄ widget 双向接线（值域即 scrollOffset：0=底部最新）
+    connect(m_term, &ZzCoreTerminalWidget::scrollRangeChanged,
+            m_vbar, &QScrollBar::setMaximum);
+    connect(m_term, &ZzCoreTerminalWidget::scrollOffsetChanged,
+            m_vbar, &QScrollBar::setValue);
+    connect(m_vbar, &QScrollBar::valueChanged, this, [this](int value) {
+        if (value == m_vbar->maximum() && value > 0)
+            m_term->requestOlderHistory(); // 拖到顶同样触发读回注入
+        m_term->setScrollOffset(value);
+    });
+    connect(m_term, &ZzCoreTerminalWidget::hScrollRangeChanged, this,
+            [this](int max) {
+                m_hbar->setMaximum(max);
+                m_hbar->setVisible(max > 0);
+            });
+    connect(m_term, &ZzCoreTerminalWidget::hScrollOffsetChanged,
+            m_hbar, &QScrollBar::setValue);
+    connect(m_hbar, &QScrollBar::valueChanged,
+            m_term, &ZzCoreTerminalWidget::setHScrollOffset);
 
     retranslateUi();
 

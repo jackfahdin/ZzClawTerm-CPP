@@ -638,11 +638,21 @@ void ZzCoreTerminalWidget::wheelEvent(QWheelEvent *event)
     const int steps = event->angleDelta().y() / 120;
     if (steps != 0) {
         // offset 语义为离底行数：上滚（steps > 0）增大 offset 进入历史，每格 3 行。
+        if (steps > 0 && maxScrollOffset() > 0 && scrollOffset_ >= maxScrollOffset()) {
+            emit historyTopReached(); // 已到顶仍上滚：通知读回桥注入更早历史
+        }
         setScrollOffset(scrollOffset_ + steps * 3);
         event->accept();
         return;
     }
     QWidget::wheelEvent(event);
+}
+
+void ZzCoreTerminalWidget::notifyHistoryPrepended()
+{
+    emit scrollRangeChanged(maxScrollOffset()); // 上限增长，滚动条扩展
+    setScrollOffset(scrollOffset_);             // 夹取（数值不变即视口稳定）
+    update();
 }
 
 QString ZzCoreTerminalWidget::visibleStitchedTextForTest(int row) const

@@ -9,6 +9,7 @@
 
 class QLabel;
 class QPushButton;
+class QScrollBar;
 class ZzAppSettings;
 class ZzCoreTerminalWidget;
 class ZzScrollbackBridge;
@@ -94,6 +95,8 @@ private:
     void hideErrorBanner();
 
     ZzCoreTerminalWidget *m_term = nullptr;
+    QScrollBar *m_vbar = nullptr;    ///< 纵向滚动条（值域 = scrollOffset：0=底部最新）
+    QScrollBar *m_hbar = nullptr;    ///< 横向滚动条（仅不换行模式可见）
     ZzTransportInterface *m_transport = nullptr;
     ZzResizeDebouncer m_resizeDebouncer{150}; ///< resize 尾随去抖：拖拽期间合并，停手后发最终尺寸
     ZzTransportEndpoint m_lastEndpoint;  ///< 最近一次 open 参数（重连用）

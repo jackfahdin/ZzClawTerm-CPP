@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QInputMethodEvent>
+#include <QWheelEvent>
 
 #include <ZzTerm/UnwrapView.h> // lineCount() 需完整类型（Terminal.h 仅前向声明）
 
@@ -135,6 +136,30 @@ private slots:
         QApplication::sendEvent(&widget, &preedit);
         QCOMPARE(widget.preeditTextForTest(), QStringLiteral("zhong"));
         QCOMPARE(spy.count(), 0); // preedit 不进会话
+    }
+
+    void wheelAtHistoryTopEmitsTopReached()
+    {
+        ZzCoreTerminalWidget widget;
+        widget.show(); // 隐藏 widget 的 resize() 不投递 QResizeEvent（Qt 延迟到 show）
+        for (int i = 0; i < 60; ++i)
+            widget.recvData(QByteArray("line\r\n"));
+        QVERIFY(widget.maxScrollOffset() > 0); // 60 行必然滚出历史（屏 ≤ 60 行）
+        QSignalSpy spy(&widget, &ZzCoreTerminalWidget::historyTopReached);
+        widget.setScrollOffset(widget.maxScrollOffset()); // 到顶
+        QWheelEvent up(QPointF(5, 5), QPointF(5, 5), QPoint(0, 0),
+                       QPoint(0, 120), Qt::NoButton, Qt::NoModifier,
+                       Qt::NoScrollPhase, false);
+        QApplication::sendEvent(&widget, &up);
+        QVERIFY(spy.count() >= 1);
+        // 未到顶的上滚不触发（信号语义 = 越顶读回触发点，非每次上滚）
+        QSignalSpy spy2(&widget, &ZzCoreTerminalWidget::historyTopReached);
+        widget.setScrollOffset(0);
+        QWheelEvent up2(QPointF(5, 5), QPointF(5, 5), QPoint(0, 0),
+                        QPoint(0, 120), Qt::NoButton, Qt::NoModifier,
+                        Qt::NoScrollPhase, false);
+        QApplication::sendEvent(&widget, &up2);
+        QCOMPARE(spy2.count(), 0);
     }
 };
 

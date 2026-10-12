@@ -96,7 +96,7 @@ signals:
     void sendData(const QByteArray &data);
     /** @brief 网格行列变化（宿主据此去抖转发 transport->resize）。 */
     void gridResized(int cols, int rows);
-    /** @brief 纵向可滚动范围/偏移变化（滚动条接线用，Z2 接滚动条）。 */
+    /** @brief 纵向可滚动范围/偏移变化（ZzTerminalView 滚动条接线用）。 */
     void scrollRangeChanged(int maximum);
     void scrollOffsetChanged(int offset);
     /** @brief 横向可滚动范围/偏移变化。 */
@@ -104,6 +104,14 @@ signals:
     void hScrollOffsetChanged(int offset);
     /** @brief 一次 recvData 的 feed 完成（历史落盘差分等观察者用）。 */
     void contentFed();
+    /** @brief 用户上滚已到历史最顶端（读回桥注入触发点，规格 §4.4）。 */
+    void historyTopReached();
+
+public:
+    /** @brief 读回桥注入完成后调用：重发射滚动范围/夹取偏移/重绘。 */
+    void notifyHistoryPrepended();
+    /** @brief 外部触发点（滚动条拖到顶等）：发射 historyTopReached 请求读回注入。 */
+    void requestOlderHistory() { emit historyTopReached(); }
 
 protected:
     void paintEvent(QPaintEvent *event) override;
