@@ -18,7 +18,8 @@ class ZzLogEngine;
  * 读回路径（Z2 任务 5 重建）：widget 越顶信号 historyTopReached 触发
  * injectOlderBlock——readOlderLines 委托引擎 getLines 取更早一块，经
  * M19 原语 prependHistoryLines 注入 Core 历史最旧端（纯文本、无样式）；
- * reflow/重组经 generation 侦测做差分游标回锚，不重复追加。
+ * 变列 reflow（行身份重建）经 gridResized 做差分游标回锚，不重复追加，
+ * reflow 同帧突发输出的新行不丢（任务 5 审查修复）。
  * 降级路径：引擎 degradedToMemoryOnly → degraded 信号 → 状态栏提示（规格 §八）。
  */
 class ZzScrollbackBridge : public QObject
@@ -61,4 +62,5 @@ private:
     ZzLogEngine *m_engine;
     std::uint64_t m_seenLineNo = 0; ///< 追加对账游标：已落盘的绝对行号（含 dropped 偏移）
     std::uint64_t m_lastGeneration = 0; ///< 上一帧历史代计数（reflow/重组侦测）
+    int m_lastCols = -1; ///< 上次 gridResized 的列数（列变 reflow 与纯行变甄别）
 };
