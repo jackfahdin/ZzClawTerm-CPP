@@ -351,6 +351,86 @@ private slots:
                  1);
     }
 
+    /**
+     * @brief 复审修复 1：ED 3（CSI 3 J 清滚动历史，xterm 语义不动屏幕）后
+     *        续行不丢——clear 不复位 totalDropped、列数未变无 gridResized，
+     *        差分游标由 contentFed 收缩向兜底回锚（ncurses clear / tmux
+     *        clear-history 触发面）。
+     */
+    void clearScrollbackDoesNotLoseLines()
+    {
+        ZzCoreTerminalWidget term;
+        term.terminal().resize(10, 3);
+        ZzLogEngine engine(ZzLogEngine::Config{});
+        QVERIFY(engine.open());
+        ZzScrollbackBridge bridge(&term, &engine);
+
+        // 8 行进 3 行屏：历史 6（l1..l6 落盘），屏 [l7, l8, 光标行]
+        for (int i = 1; i <= 8; ++i)
+            term.recvData(QStringLiteral("l%1\r\n").arg(i).toUtf8());
+        QCOMPARE(engine.totalLines(), 6ULL);
+
+        // ED 3 清滚动历史（独立 feed：contentFed 此刻历史为空，回锚精确）
+        term.recvData(QByteArray("\033[3J"));
+        QCOMPARE(term.terminal().historyView().lineCount(), std::size_t(0));
+
+        // 清后分批小量输出：游标不得冻结，新滚出行逐批落盘
+        for (int batch = 0; batch < 4; ++batch) {
+            term.recvData(QStringLiteral("post-%1\r\npost-%2\r\n")
+                              .arg(batch * 2 + 1).arg(batch * 2 + 2).toUtf8());
+        }
+        // 滚出序：l7、l8（清后首批滚出的屏上旧行，此前未落盘）+ post-1..6
+        QCOMPARE(engine.totalLines(), 14ULL);
+        QCOMPARE(logTexts(engine.getLines(6, 8)),
+                 QStringList({QStringLiteral("l7"), QStringLiteral("l8"),
+                              QStringLiteral("post-1"), QStringLiteral("post-2"),
+                              QStringLiteral("post-3"), QStringLiteral("post-4"),
+                              QStringLiteral("post-5"), QStringLiteral("post-6")}));
+    }
+
+    /**
+     * @brief 复审修复 2：Alternate 屏活跃期间 resize（vim/htop 里拖窗口），
+     *        Core 照样 reflow Primary 历史并发射 gridResized，但
+     *        historyView().lineCount() 契约性归零——回锚必须取 buffer 无关
+     *        口径（primaryLineCount），否则回主屏后整段历史被当新行重复落盘。
+     */
+    void resizeInAltScreenDoesNotDuplicate()
+    {
+        ZzCoreTerminalWidget term;
+        term.show();
+        const int cw = term.cellWidthForTest();
+        const int ch = term.cellHeightForTest();
+        term.resize(40 * cw, 4 * ch);
+        ZzLogEngine engine(ZzLogEngine::Config{});
+        QVERIFY(engine.open());
+        ZzScrollbackBridge bridge(&term, &engine);
+
+        // 8 行进 4 行屏：历史 5（line-0..4 落盘），屏 [line-5..7, 光标行]
+        for (int i = 0; i < 8; ++i)
+            term.recvData(QStringLiteral("line-%1\r\n").arg(i).toUtf8());
+        QCOMPARE(engine.totalLines(), 5ULL);
+
+        term.recvData(QByteArray("\033[?1049h")); // 进 Alternate：可见历史归零
+        QCOMPARE(term.terminal().historyView().lineCount(), std::size_t(0));
+        term.recvData(QByteArray("alt-screen-output\r\n")); // alt 输出不进历史/日志
+        QCOMPARE(engine.totalLines(), 5ULL);
+
+        // alt 期间列变：Primary 历史照样 reflow（不可见），gridResized 发射
+        term.resize(20 * cw, 4 * ch);
+
+        // 回主屏 + 突发输出：恢复的历史（line-0..4）不得重复落盘，
+        // 只有真实 scrollout（屏上行 line-5..7）追加
+        term.recvData(QByteArray("\033[?1049lpost-a\r\npost-b\r\npost-c\r\n"));
+        QCOMPARE(engine.totalLines(), 8ULL);
+        QCOMPARE(logTexts(engine.getLines(5, 3)),
+                 QStringList({QStringLiteral("line-5"), QStringLiteral("line-6"),
+                              QStringLiteral("line-7")}));
+        // 全日志逐条核对：每条 line-i 恰好一次（无重复块）
+        const QStringList all = logTexts(engine.getLines(0, engine.totalLines()));
+        for (int i = 0; i < 8; ++i)
+            QCOMPARE(all.count(QStringLiteral("line-%1").arg(i)), 1);
+    }
+
 private:
     /** @brief 历史第 idx 行纯文本（去尾部填充空格）。 */
     static QString historyLineText(const ZzHistoryView &hv, std::size_t idx)
