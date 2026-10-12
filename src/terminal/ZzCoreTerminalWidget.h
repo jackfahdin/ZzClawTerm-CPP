@@ -30,6 +30,7 @@
 
 #include "ZzTerminalPalette.h"
 
+class QInputMethodEvent;
 class QPainter;
 class ZzStitchedLineView;
 
@@ -85,6 +86,11 @@ public:
     /** @brief 当前方案名（已回退后的实际值）。 */
     [[nodiscard]] QString colorSchemeName() const noexcept { return schemeName_; }
 
+    /** @brief 输入法查询（候选窗定位微焦点等；QWidget 为 public virtual）。 */
+    [[nodiscard]] QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
+    /** @brief 测试钩子：IME 组合中串（preedit，不进会话）。 */
+    [[nodiscard]] QString preeditTextForTest() const { return preedit_; }
+
 signals:
     /** @brief 键盘编码字节（终端→传输方向）。 */
     void sendData(const QByteArray &data);
@@ -107,6 +113,7 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void inputMethodEvent(QInputMethodEvent *event) override;
 
 private:
     // —— 以下成员与 spike ZzCoreViewWidget 同名同义（含三个手测修复）——
@@ -137,5 +144,6 @@ private:
     int scrollOffset_ = 0;
     bool selecting_ = false;
     ZzLogicalPos selAnchor_{};
+    QString preedit_;                 ///< IME 组合中串（绘制于光标处，不进会话）
     std::FILE *trace_ = nullptr;      ///< 留痕（env ZZCORE_SPIKE_TRACE）
 };

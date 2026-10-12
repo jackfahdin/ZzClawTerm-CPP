@@ -1,6 +1,8 @@
 #include <QtTest/QtTest>
 
+#include <QApplication>
 #include <QClipboard>
+#include <QInputMethodEvent>
 
 #include <ZzTerm/UnwrapView.h> // lineCount() 需完整类型（Terminal.h 仅前向声明）
 
@@ -108,6 +110,31 @@ private slots:
         widget.setColorScheme(QStringLiteral("NoSuchScheme-xyz"));
         QCOMPARE(widget.colorSchemeName(),
                  ZzTerminalPalette::defaultSchemeName());
+    }
+
+    void imeCommitSendsText()
+    {
+        ZzCoreTerminalWidget widget;
+        QSignalSpy spy(&widget, &ZzCoreTerminalWidget::sendData);
+        QInputMethodEvent commit(QString(), QList<QInputMethodEvent::Attribute>{});
+        commit.setCommitString(QStringLiteral("中文"));
+        QApplication::sendEvent(&widget, &commit);
+        QVERIFY(spy.count() >= 1);
+        QByteArray all;
+        for (const auto &call : spy)
+            all += call.at(0).toByteArray();
+        QCOMPARE(all, QStringLiteral("中文").toUtf8());
+    }
+
+    void imePreeditTrackedNotSent()
+    {
+        ZzCoreTerminalWidget widget;
+        QSignalSpy spy(&widget, &ZzCoreTerminalWidget::sendData);
+        QInputMethodEvent preedit(QStringLiteral("zhong"),
+                                  QList<QInputMethodEvent::Attribute>());
+        QApplication::sendEvent(&widget, &preedit);
+        QCOMPARE(widget.preeditTextForTest(), QStringLiteral("zhong"));
+        QCOMPARE(spy.count(), 0); // preedit 不进会话
     }
 };
 

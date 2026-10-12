@@ -4,6 +4,7 @@
 #include <QFontDatabase>
 #include <QFontMetrics>
 #include <QGuiApplication>
+#include <QInputMethodEvent>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
@@ -68,6 +69,7 @@ ZzCoreTerminalWidget::ZzCoreTerminalWidget(QWidget *parent)
 
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_OpaquePaintEvent);
+    setAttribute(Qt::WA_InputMethodEnabled, true);
 
     // 键盘编码字节与终端回传（DA1/DSR 等）统一经 output 通道发出，
     // 在此转发为 sendData 信号；编码模式位由 ZzTerminal 与 feed 联动同步。
@@ -242,6 +244,22 @@ void ZzCoreTerminalWidget::paintWrapped(QPainter &painter)
             painter.drawText(cursor.position.col * cellWidth_,
                              cursor.position.row * cellHeight_ + cellAscent_,
                              QString::fromStdString(under.text));
+        }
+    }
+
+    // IME preedit：组合中串即时绘制于光标处（下划线），仅钉底且光标可见时。
+    if (!preedit_.isEmpty() && scrollOffset_ == 0) {
+        const ZzCursorState imeCursor = term_.cursor();
+        if (imeCursor.visible && imeCursor.position.row < view.size().rows) {
+            QFont f = painter.font();
+            f.setUnderline(true); // preedit 惯例样式：下划线
+            painter.setFont(f);
+            painter.setPen(scheme_.foreground);
+            const int y = imeCursor.position.row * cellHeight_ + cellAscent_;
+            // 从光标格起绘，超出右缘部分裁剪（不换行模式由横滚覆盖，不特殊处理）
+            painter.setClipRect(rect());
+            painter.drawText(imeCursor.position.col * cellWidth_, y, preedit_);
+            painter.setClipping(false);
         }
     }
 }
@@ -451,6 +469,37 @@ void ZzCoreTerminalWidget::keyPressEvent(QKeyEvent *event)
     }
 
     QWidget::keyPressEvent(event);
+}
+
+void ZzCoreTerminalWidget::inputMethodEvent(QInputMethodEvent *event)
+{
+    if (!event->commitString().isEmpty()) {
+        term_.sendText(event->commitString().toUtf8().toStdString());
+        preedit_.clear();
+    } else {
+        preedit_ = event->preeditString();
+    }
+    update();
+    event->accept();
+}
+
+QVariant ZzCoreTerminalWidget::inputMethodQuery(Qt::InputMethodQuery query) const
+{
+    switch (query) {
+    case Qt::ImEnabled:
+        return true;
+    case Qt::ImCursorRectangle: {
+        // 光标微焦点矩形（输入法候选窗定位）；滚动回看时上报现行光标格即可
+        const ZzCursorState cursor = term_.cursor();
+        return QRect(cursor.position.col * cellWidth_,
+                     cursor.position.row * cellHeight_,
+                     cellWidth_, cellHeight_);
+    }
+    case Qt::ImFont:
+        return font();
+    default:
+        return QWidget::inputMethodQuery(query);
+    }
 }
 
 void ZzCoreTerminalWidget::resizeEvent(QResizeEvent *event)
