@@ -1,6 +1,7 @@
 #include <QtTest/QtTest>
 
 #include "settings/ZzAppSettings.h"
+#include "terminal/ZzTerminalPalette.h"
 
 /**
  * @brief 验证全局设置：默认值、往返持久化、变更通知。
@@ -15,8 +16,18 @@ private slots:
         QCOMPARE(settings.terminalType(), QStringLiteral("xterm-256color"));
         QCOMPARE(settings.encoding(), QStringLiteral("UTF-8"));
         QCOMPARE(settings.fontSize(), 12);
-        QCOMPARE(settings.colorScheme(), QStringLiteral("Linux"));
+        QCOMPARE(settings.colorScheme(), ZzTerminalPalette::defaultSchemeName());
         QCOMPARE(settings.historyLines(), 10000);
+    }
+
+    void availableColorSchemesDelegatesToPalette()
+    {
+        // Z2：清单整体委托 ZzTerminalPalette（iTerm2 vendored 全量表）
+        QCOMPARE(ZzAppSettings::availableColorSchemes(),
+                 ZzTerminalPalette::availableSchemes());
+        QVERIFY(ZzAppSettings::availableColorSchemes().size() > 250);
+        QVERIFY(ZzAppSettings::availableColorSchemes().contains(
+            ZzTerminalPalette::defaultSchemeName()));
     }
 
     void roundTrip()

@@ -31,7 +31,7 @@ class tst_ZzSshConfigPage : public QObject
         profile.privateKeyPath = QStringLiteral("/home/u/.ssh/id_ed25519");
         profile.terminalType = QStringLiteral("xterm-256color");
         profile.encoding = QStringLiteral("UTF-8");
-        profile.colorSchemeName = QStringLiteral("Linux");
+        profile.colorSchemeName = QStringLiteral("Dracula");
         profile.keepAliveIntervalSeconds = 30;
         profile.x11Forwarding = true;
         profile.x11EmbedMode = true;

@@ -53,8 +53,8 @@ public:
     /** @brief 当前传输状态（未绑定视为 Disconnected）。 */
     [[nodiscard]] ZzTransportInterface::State transportState() const;
 
-    /** @brief 应用全局设置：字号、编码（含收发转码器重建）；
-     *        配色与内存历史行数 Z1 读存暂不生效（Z2 收口）。 */
+    /** @brief 应用全局设置：字号、编码（含收发转码器重建）、配色方案；
+     *        historyLines 读存暂不生效（Core 构造期容量）。 */
     void applySettings(const ZzAppSettings &settings);
 
     /** @brief 启用滚动历史桥：为该会话创建 ZzLogEngine 并接线（ZzTabManager 开会话时调用）。 */

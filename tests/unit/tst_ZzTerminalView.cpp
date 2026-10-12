@@ -188,6 +188,19 @@ private slots:
                                     QDir::Files);
         QCOMPARE(warmFiles.size(), 2);
     }
+
+    void applySettingsPropagatesColorScheme()
+    {
+        const QString path = QDir(QDir::tempPath())
+            .filePath(QStringLiteral("zzclawterm-view-colorscheme-test.ini"));
+        QFile::remove(path);
+        ZzTerminalView view;
+        ZzAppSettings settings(path);
+        settings.setColorScheme(QStringLiteral("Dracula"));
+        view.applySettings(settings);
+        QCOMPARE(view.termWidget()->colorSchemeName(), QStringLiteral("Dracula"));
+        QFile::remove(path);
+    }
 };
 
 QTEST_MAIN(tst_ZzTerminalView)

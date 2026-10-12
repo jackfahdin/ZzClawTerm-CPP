@@ -5,6 +5,7 @@
 #include <ZzTerm/UnwrapView.h> // lineCount() 需完整类型（Terminal.h 仅前向声明）
 
 #include "terminal/ZzCoreTerminalWidget.h"
+#include "terminal/ZzTerminalPalette.h"
 
 /**
  * @brief ZzCoreTerminalWidget（Z1）契约：feed→渲染、键盘→sendData、
@@ -89,6 +90,24 @@ private slots:
         widget.setUnwrapMode(true);
         QCOMPARE(widget.terminal().unwrapView().lineCount(), std::size_t(3));
         QCOMPARE(widget.maxHScrollOffset(), 25 - 10);
+    }
+
+    void colorSchemeAppliesToRendering()
+    {
+        ZzCoreTerminalWidget widget;
+        widget.setColorScheme(QStringLiteral("Builtin Tango Dark"));
+        // 方案切换后默认背景色变化即生效（paintEvent 全铺背景）
+        widget.setColorScheme(QStringLiteral("iTerm2 Solarized Light"));
+        // 不断言像素（offscreen 无意义），断言内部态与无崩溃：
+        QCOMPARE(widget.colorSchemeName(), QStringLiteral("iTerm2 Solarized Light"));
+    }
+
+    void unknownSchemeFallsBack()
+    {
+        ZzCoreTerminalWidget widget;
+        widget.setColorScheme(QStringLiteral("NoSuchScheme-xyz"));
+        QCOMPARE(widget.colorSchemeName(),
+                 ZzTerminalPalette::defaultSchemeName());
     }
 };
 

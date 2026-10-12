@@ -5,12 +5,12 @@
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QSpinBox>
 
-#include "qtermwidget.h"
 #include "settings/ZzAppSettings.h"
 #include "settings/ZzSettingsPage.h"
 
 /**
- * @brief 验证设置页：表单回显当前值、修改即写存储、配色选项来自 QTermWidget。
+ * @brief 验证设置页：表单回显当前值、修改即写存储、配色选项来自
+ *        ZzAppSettings（Z2：委托 ZzTerminalPalette）。
  */
 class tst_ZzSettingsPage : public QObject
 {
@@ -91,8 +91,8 @@ private slots:
         ZzAppSettings settings(m_path);
         ZzSettingsPage page(&settings);
         QCOMPARE(page.colorSchemeCombo()->count(),
-                 QTermWidget::availableColorSchemes().count());
-        QVERIFY(page.colorSchemeCombo()->count() > 0);
+                 ZzAppSettings::availableColorSchemes().count());
+        QVERIFY(page.colorSchemeCombo()->count() > 250);
     }
 };
 

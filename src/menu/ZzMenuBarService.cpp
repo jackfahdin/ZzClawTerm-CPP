@@ -20,11 +20,12 @@
 #include "settings/ZzLanguageManager.h"
 
 namespace {
-// 精选终端配色（不存在于 availableColorSchemes() 的条目跳过）
+// 精选终端配色（不存在于 availableColorSchemes() 的条目跳过）；
+// 名字逐一对照 src/terminal/colorschemes/ vendored 文件核实（Z2）
 const char *kCuratedSchemes[] = {
-    "Linux", "Solarized", "SolarizedLight", "Dracula", "nord",
-    "tokyonight", "catppuccin-mocha", "catppuccin-latte",
-    "catppuccin-frappe", "catppuccin-macchiato", "Tango", "Ubuntu",
+    "Builtin Tango Dark", "iTerm2 Solarized Dark", "iTerm2 Solarized Light",
+    "Dracula", "Nord", "TokyoNight", "Gruvbox Dark", "One Half Dark",
+    "Catppuccin Mocha", "Ubuntu",
 };
 } // namespace
 

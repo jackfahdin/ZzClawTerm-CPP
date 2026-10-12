@@ -194,9 +194,8 @@ void ZzTerminalView::applySettings(const ZzAppSettings &settings)
         m_decoder = QStringDecoder(QStringConverter::Utf8);
         m_encoder = QStringEncoder(QStringConverter::Utf8);
     }
-    // 配色方案表与 historyLines 运行时调整属 Z2 收口（Z1 固定默认
-    // 调色板 + 构造期 10000 行）；设置值仍读存，切换配色暂不生效。
-    (void)settings.colorScheme();
+    m_term->setColorScheme(settings.colorScheme());
+    // historyLines 运行时调整仍不生效（Core 构造期容量），保留读存。
     (void)settings.historyLines();
 }
 

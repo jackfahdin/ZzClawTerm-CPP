@@ -3,6 +3,8 @@
 #include <QtCore/QSettings>
 #include <QtCore/QStandardPaths>
 
+#include "terminal/ZzTerminalPalette.h"
+
 ZzAppSettings::ZzAppSettings(const QString &filePath, QObject *parent)
     : QObject(parent)
     , m_settings(new QSettings(filePath, QSettings::IniFormat, this))
@@ -64,7 +66,7 @@ void ZzAppSettings::setFontSize(int fontSize)
 QString ZzAppSettings::colorScheme() const
 {
     return m_settings->value(QStringLiteral("terminal/colorScheme"),
-                             QStringLiteral("Linux")).toString();
+                             ZzTerminalPalette::defaultSchemeName()).toString();
 }
 
 void ZzAppSettings::setColorScheme(const QString &colorScheme)
@@ -78,16 +80,7 @@ void ZzAppSettings::setColorScheme(const QString &colorScheme)
 
 QStringList ZzAppSettings::availableColorSchemes()
 {
-    // Z1 过渡内置清单：与菜单精选集（ZzMenuBarService::kCuratedSchemes）
-    // 一致；渲染端固定默认调色板，方案表属 Z2 收口
-    return {
-        QStringLiteral("Linux"), QStringLiteral("Solarized"),
-        QStringLiteral("SolarizedLight"), QStringLiteral("Dracula"),
-        QStringLiteral("nord"), QStringLiteral("tokyonight"),
-        QStringLiteral("catppuccin-mocha"), QStringLiteral("catppuccin-latte"),
-        QStringLiteral("catppuccin-frappe"), QStringLiteral("catppuccin-macchiato"),
-        QStringLiteral("Tango"), QStringLiteral("Ubuntu"),
-    };
+    return ZzTerminalPalette::availableSchemes(); // Z2：iTerm2 全量方案表
 }
 
 int ZzAppSettings::historyLines() const

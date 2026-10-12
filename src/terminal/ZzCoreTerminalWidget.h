@@ -8,8 +8,9 @@
  * 与 spike 原型的差异：
  * - 喂入口更名 recvData(QByteArray)（对齐 ZzTerminalView 胶水用语）；
  * - 键盘字节经信号 sendData(QByteArray) 发出（spike 是 writeFn 回调）；
- * - 渲染带配色：cell fg/bg 经内置默认调色板（qtermwidget "Linux"
- *   方案）解析为 QColor，背景格填充；
+ * - 渲染带配色：cell fg/bg 经 ZzTerminalPalette 当前方案（默认
+ *   defaultSchemeName()，setColorScheme 运行时切换）解析为 QColor，
+ *   背景格填充；
  * - 暴露 gridCols()/gridRows()（ZzTabManager 的 screenColumnsCount/
  *   screenLinesCount 等价物）与 cellWidthForTest/cellHeightForTest；
  * - 保留 spike 的：不换行模式（Ctrl+Shift+U）、选区（锚点自存重放、
@@ -26,6 +27,8 @@
 #include <string_view>
 
 #include <ZzTerm/Terminal.h>
+
+#include "ZzTerminalPalette.h"
 
 class QPainter;
 class ZzStitchedLineView;
@@ -77,6 +80,11 @@ public:
     /** @brief 设置终端字号（pt）。 */
     void setTerminalFontPointSize(int pointSize);
 
+    /** @brief 切换配色方案（未知名回退默认）；即时生效（重绘）。 */
+    void setColorScheme(const QString &name);
+    /** @brief 当前方案名（已回退后的实际值）。 */
+    [[nodiscard]] QString colorSchemeName() const noexcept { return schemeName_; }
+
 signals:
     /** @brief 键盘编码字节（终端→传输方向）。 */
     void sendData(const QByteArray &data);
@@ -115,8 +123,12 @@ private:
     void followCursorHorizontally();
     void traceFeed(std::string_view data);
     void traceResize(int cols, int rows);
+    /** @brief 引擎 ZzColor 经当前方案解析为 QColor（替代 Z1 自由函数）。 */
+    [[nodiscard]] QColor resolveCellColor(ZzColor color, bool isForeground) const;
 
     ZzTerminal term_;                 ///< 引擎（Native 80x24，历史 10000）
+    ZzTerminalPalette::Scheme scheme_;   ///< 当前方案（构造即默认方案）
+    QString schemeName_;                 ///< 当前方案名（回退后实际值）
     int cellWidth_ = 1;
     int cellHeight_ = 1;
     int cellAscent_ = 0;

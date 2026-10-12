@@ -51,7 +51,14 @@ private slots:
         // 主题 4 项勾选组；语言 3 项勾选组
         QCOMPARE(service.themeGroup()->actions().size(), 4);
         QCOMPARE(service.languageGroup()->actions().size(), 3);
-        QVERIFY(service.terminalThemeGroup()->actions().size() >= 10);
+        // 终端配色精选 ⊆ availableColorSchemes() 且规模不缩水（Z2 口径：
+        // 名单与 vendored 方案不一致时 curatedColorSchemes 过滤缩水）
+        const QStringList available = ZzAppSettings::availableColorSchemes();
+        const QList<QAction *> schemeActions =
+            service.terminalThemeGroup()->actions();
+        QVERIFY(schemeActions.size() >= 8);
+        for (const QAction *a : schemeActions)
+            QVERIFY(available.contains(a->data().toString()));
         // 帮助：3 项（关于/日志目录/仓库）
         QCOMPARE(service.helpMenu()->actions().size(), 3);
     }

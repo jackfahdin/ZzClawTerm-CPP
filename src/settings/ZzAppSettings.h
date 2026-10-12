@@ -35,14 +35,14 @@ public:
     [[nodiscard]] int fontSize() const;
     void setFontSize(int fontSize);
 
-    /** @brief 默认配色方案名（availableColorSchemes() 之一），默认 "Linux"。 */
+    /** @brief 默认配色方案名（availableColorSchemes() 之一），默认
+     *        ZzTerminalPalette::defaultSchemeName()。 */
     [[nodiscard]] QString colorScheme() const;
     void setColorScheme(const QString &colorScheme);
 
     /**
      * @brief 已知配色方案名清单（设置页/会话配置/菜单的选项来源）。
-     * @note Z1 过渡：QTermWidget 摘除后为固定内置清单，渲染端固定默认调色板，
-     *       切换暂不生效；真实方案表与运行时切换属 Z2 收口。
+     * @note Z2：委托 ZzTerminalPalette（iTerm2-Color-Schemes vendored）。
      */
     [[nodiscard]] static QStringList availableColorSchemes();
 

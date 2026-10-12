@@ -17,6 +17,8 @@
 
 #include <ZzTerm/UnwrapView.h>
 
+#include "ZzTerminalPalette.h"
+
 namespace {
 
 /**
@@ -53,69 +55,14 @@ namespace {
            && (line < end.line || (line == end.line && col < end.col));
 }
 
-// 内置默认调色板（qtermwidget "Linux" 方案；Z2 抽 ZzTerminalPalette）
-// 取值来源：third_party/ZzTermWidget/lib/resources/color-schemes/Linux.colorscheme
-// —— 0-7 普通（Color0..Color7）+ 8-15 亮（Color0Intense..Color7Intense），
-// color 行为 R,G,B 三元组。
-const QColor kDefaultPalette[16] = {
-    QColor(0, 0, 0),       ///< 0  black         (Color0)
-    QColor(178, 24, 24),   ///< 1  red           (Color1)
-    QColor(24, 178, 24),   ///< 2  green         (Color2)
-    QColor(178, 104, 24),  ///< 3  yellow        (Color3)
-    QColor(24, 24, 178),   ///< 4  blue          (Color4)
-    QColor(178, 24, 178),  ///< 5  magenta       (Color5)
-    QColor(24, 178, 178),  ///< 6  cyan          (Color6)
-    QColor(178, 178, 178), ///< 7  white         (Color7)
-    QColor(104, 104, 104), ///< 8  bright black  (Color0Intense)
-    QColor(255, 84, 84),   ///< 9  bright red    (Color1Intense)
-    QColor(84, 255, 84),   ///< 10 bright green  (Color2Intense)
-    QColor(255, 255, 84),  ///< 11 bright yellow (Color3Intense)
-    QColor(84, 84, 255),   ///< 12 bright blue   (Color4Intense)
-    QColor(255, 84, 255),  ///< 13 bright magenta(Color5Intense)
-    QColor(84, 255, 255),  ///< 14 bright cyan   (Color6Intense)
-    QColor(255, 255, 255), ///< 15 bright white  (Color7Intense)
-};
-
-/**
- * @brief 引擎 ZzColor 经内置默认调色板解析为 QColor。
- * @param color 单元格前景/背景色。
- * @param isForeground true 解析前景、false 解析背景（Default 回退值不同）。
- * @return 可绘制的 QColor。
- */
-[[nodiscard]] QColor resolveCellColor(ZzColor color, bool isForeground)
-{
-    switch (color.kind()) {
-    case ZzColor::Kind::Rgb:
-        return QColor(color.red(), color.green(), color.blue());
-    case ZzColor::Kind::Indexed: {
-        const int idx = color.index();
-        if (idx >= 0 && idx < 16)
-            return kDefaultPalette[idx];
-        // 256 色扩展段（16-255）：xterm 标准立方体+灰阶公式
-        if (idx >= 16 && idx < 232) {
-            const int v = idx - 16;
-            const int r = v / 36, g = (v % 36) / 6, b = v % 6;
-            auto lv = [](int c) { return c == 0 ? 0 : 55 + c * 40; };
-            return QColor(lv(r), lv(g), lv(b));
-        }
-        if (idx >= 232 && idx < 256) {
-            const int gray = 8 + (idx - 232) * 10;
-            return QColor(gray, gray, gray);
-        }
-        return isForeground ? QColor(0xcc, 0xcc, 0xcc)
-                            : QColor(0x00, 0x00, 0x00);
-    }
-    default: // Default
-        return isForeground ? QColor(0xcc, 0xcc, 0xcc)
-                            : QColor(0x00, 0x00, 0x00);
-    }
-}
-
 } // namespace
 
 ZzCoreTerminalWidget::ZzCoreTerminalWidget(QWidget *parent)
     : QWidget(parent), term_(80, 24, ZzBackendKind::Native, 10000)
 {
+    scheme_     = ZzTerminalPalette::scheme(ZzTerminalPalette::defaultSchemeName());
+    schemeName_ = ZzTerminalPalette::defaultSchemeName();
+
     setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     updateCellMetrics();
 
@@ -216,6 +163,30 @@ void ZzCoreTerminalWidget::setTerminalFontPointSize(int pointSize)
     }
 
     updateGeometry();
+    update();
+}
+
+QColor ZzCoreTerminalWidget::resolveCellColor(ZzColor color, bool isForeground) const
+{
+    switch (color.kind()) {
+    case ZzColor::Kind::Rgb:
+        return QColor(color.red(), color.green(), color.blue());
+    case ZzColor::Kind::Indexed:
+        return ZzTerminalPalette::colorForIndex(scheme_, color.index());
+    default: // Default：对齐当前方案默认前景/背景（修 Z1 0xcc 与方案不一致）
+        return isForeground ? scheme_.foreground : scheme_.background;
+    }
+}
+
+void ZzCoreTerminalWidget::setColorScheme(const QString &name)
+{
+    const QString effective = ZzTerminalPalette::availableSchemes().contains(name)
+                                  ? name
+                                  : ZzTerminalPalette::defaultSchemeName();
+    if (schemeName_ == effective)
+        return;
+    schemeName_ = effective;
+    scheme_     = ZzTerminalPalette::scheme(effective);
     update();
 }
 
