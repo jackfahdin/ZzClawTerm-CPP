@@ -9,6 +9,7 @@
 #include <QtWidgets/QSpinBox>
 
 #include "settings/ZzAppSettings.h"
+#include "terminal/ZzTerminalPalette.h"
 
 ZzSettingsPage::ZzSettingsPage(ZzAppSettings *settings, QWidget *parent)
     : QWidget(parent)
@@ -45,7 +46,13 @@ ZzSettingsPage::ZzSettingsPage(ZzAppSettings *settings, QWidget *parent)
 
     m_colorSchemeCombo = new QComboBox(this);
     m_colorSchemeCombo->addItems(ZzAppSettings::availableColorSchemes());
-    m_colorSchemeCombo->setCurrentText(m_settings->colorScheme());
+    // ini 残留旧方案名（不在 vendored 表中）时回退显示默认方案——非编辑
+    // combo 的 setCurrentText 对未知名静默落空，会误显示首项并在保存时覆盖 ini
+    const QString scheme = m_settings->colorScheme();
+    m_colorSchemeCombo->setCurrentText(
+        ZzTerminalPalette::availableSchemes().contains(scheme)
+            ? scheme
+            : ZzTerminalPalette::defaultSchemeName());
     m_formLayout->addRow(new QLabel(this), m_colorSchemeCombo);
 
     m_historyLinesSpin = new QSpinBox(this);
