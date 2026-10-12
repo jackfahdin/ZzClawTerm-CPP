@@ -108,22 +108,31 @@ private slots:
         ZzLocalPtyTransport transport;
         ZzTransportEndpoint endpoint;
         endpoint.localShell = true;
-        endpoint.shellProgram = QStringLiteral("/bin/sh");
+        endpoint.shellProgram = platformShell();
         endpoint.cols = 80;
         endpoint.rows = 24;
         QByteArray received;
-        QObject::connect(&transport, &ZzTransportInterface::dataReceived,
-                         &transport, [&received](const QByteArray &data) {
-                             received += data;
-                         });
+        connect(&transport, &ZzTransportInterface::dataReceived,
+                this, [&received](const QByteArray &data) { received += data; });
         transport.open(endpoint);
         QTRY_VERIFY_WITH_TIMEOUT(
             transport.state() == ZzTransportInterface::State::Connected, 5000);
-        transport.write("pwd; echo T=$TERM C=$COLORTERM; exit\n");
+#if defined(Q_OS_WIN)
+        // PowerShell（platformShell 口径）：(pwd).Path 输出原生反斜杠路径，
+        // 环境变量用 $env: 语法（cmd 的 cd/%TERM% 在 PowerShell 下不成立）
+        transport.write(QByteArrayLiteral(
+            "echo (pwd).Path; echo T=$env:TERM C=$env:COLORTERM; exit") + lineEnding());
+        const QString homeRef = QDir::toNativeSeparators(QDir::homePath());
+#else
+        transport.write(QByteArrayLiteral(
+            "pwd; echo T=$TERM C=$COLORTERM; exit") + lineEnding());
+        const QString homeRef = QDir::homePath();
+#endif
         QTRY_VERIFY_WITH_TIMEOUT(
             transport.state() == ZzTransportInterface::State::Disconnected, 5000);
         const QString out = QString::fromUtf8(received);
-        QVERIFY(out.contains(QDir::homePath()));
+        // sh/PowerShell 均回显输入行，contains 断言不受回显影响
+        QVERIFY(out.contains(homeRef));
         QVERIFY(out.contains(QStringLiteral("T=xterm-256color")));
         QVERIFY(out.contains(QStringLiteral("C=truecolor")));
     }
