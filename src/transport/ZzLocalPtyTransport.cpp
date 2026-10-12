@@ -1,5 +1,6 @@
 #include "ZzLocalPtyTransport.h"
 
+#include <QtCore/QDir>
 #include <QtCore/QSocketNotifier>
 
 #include <span>
@@ -92,17 +93,6 @@ void ZzLocalPtyTransport::open(const ZzTransportEndpoint &endpoint)
     setState(State::Connecting);
     m_closing = false;
 
-    // Z1 过渡：ptyqt 时代在 env 缺失时注入 TERM/COLORTERM（GUI 启动场景系统
-    // env 通常无 TERM，缺注入会让 shell 内 vim/less/htop 退化）。进程级
-    // qputenv 是权宜；根治（ZzPtyConfig 加 env/cwd 字段）已立项为 ZzTermCore
-    // 侧后续里程碑。cwd（home 目录）同理无法在本层修，仅登记，不改行为。
-    if (qEnvironmentVariableIsEmpty("TERM")) {
-        qputenv("TERM", endpoint.terminalType.toUtf8());
-    }
-    if (qEnvironmentVariableIsEmpty("COLORTERM")) {
-        qputenv("COLORTERM", "truecolor");
-    }
-
     const QString shell = endpoint.shellProgram.isEmpty()
         ? zzDefaultShell()
         : endpoint.shellProgram;
@@ -111,6 +101,15 @@ void ZzLocalPtyTransport::open(const ZzTransportEndpoint &endpoint)
     config.cols = endpoint.cols;
     config.rows = endpoint.rows;
     config.rawMode = false; // 交互会话保持 slave echo/opost/isig
+    // M18：ptyqt 旧行为恢复——子进程 cwd=home；TERM/COLORTERM 经
+    // ZzPtyConfig.env 注入（仅父环境缺失时；进程级 qputenv 过渡退役）。
+    config.cwd = QDir::homePath().toStdString();
+    if (qEnvironmentVariableIsEmpty("TERM")) {
+        config.env.push_back("TERM=" + endpoint.terminalType.toStdString());
+    }
+    if (qEnvironmentVariableIsEmpty("COLORTERM")) {
+        config.env.push_back("COLORTERM=truecolor");
+    }
     m_pty = ZzPty::spawn(config);
     if (!m_pty) {
         setState(State::Disconnected);

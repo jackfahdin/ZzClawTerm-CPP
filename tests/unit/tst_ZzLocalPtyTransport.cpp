@@ -1,4 +1,5 @@
 #include <QtTest/QtTest>
+#include <QDir>
 #include <QStandardPaths>
 
 #include "transport/ZzLocalPtyTransport.h"
@@ -94,6 +95,37 @@ private slots:
         transport.write(QByteArrayLiteral("exit") + lineEnding());
         QTRY_VERIFY_WITH_TIMEOUT(disconnectSpy.count() >= 1, 5000);
         QCOMPARE(transport.state(), ZzTransportInterface::State::Disconnected);
+    }
+
+    void cwdAndEnvInjection()
+    {
+        // M18：本地会话 cwd=home + TERM/COLORTERM 注入（父环境缺失时）。
+        // 测试进程可能继承 TERM/COLORTERM（「仅缺失时注入」会跳过）——
+        // 先清空再断言注入生效。
+        qputenv("TERM", QByteArray());
+        qputenv("COLORTERM", QByteArray());
+
+        ZzLocalPtyTransport transport;
+        ZzTransportEndpoint endpoint;
+        endpoint.localShell = true;
+        endpoint.shellProgram = QStringLiteral("/bin/sh");
+        endpoint.cols = 80;
+        endpoint.rows = 24;
+        QByteArray received;
+        QObject::connect(&transport, &ZzTransportInterface::dataReceived,
+                         &transport, [&received](const QByteArray &data) {
+                             received += data;
+                         });
+        transport.open(endpoint);
+        QTRY_VERIFY_WITH_TIMEOUT(
+            transport.state() == ZzTransportInterface::State::Connected, 5000);
+        transport.write("pwd; echo T=$TERM C=$COLORTERM; exit\n");
+        QTRY_VERIFY_WITH_TIMEOUT(
+            transport.state() == ZzTransportInterface::State::Disconnected, 5000);
+        const QString out = QString::fromUtf8(received);
+        QVERIFY(out.contains(QDir::homePath()));
+        QVERIFY(out.contains(QStringLiteral("T=xterm-256color")));
+        QVERIFY(out.contains(QStringLiteral("C=truecolor")));
     }
 };
 
