@@ -171,15 +171,19 @@ private slots:
     void unwrapLongLineFullCopyRegression()
     {
         // 回归 spike 三案（锚点重放/画笔外泄/端点+1）：不换行模式选中
-        // 超宽行，复制内容含屏外部分
+        // 超宽行，复制内容含屏外部分。最小网格钳制（24×6）后 widget 路径
+        // 最小 24 列：40 字符行在 24 列屏上有 16 列屏外，超宽前提成立
+        //（20 字符行在钳制后不再超宽，场景曾被静默架空——复审发现①）。
         ZzCoreTerminalWidget widget;
         widget.show();
         widget.resize(10 * widget.cellWidthForTest(), 5 * widget.cellHeightForTest());
-        widget.recvData(QByteArray("0123456789ABCDEFGHIJ\r\n")); // 20 列超宽
+        QCOMPARE(widget.gridCols(), 24); // 钳制生效，前提自证
+        const QByteArray line = QByteArray("0123456789ABCDEFGHIJ").repeated(2); // 40 列
+        widget.recvData(line + "\r\n");
         widget.setUnwrapMode(true);
-        widget.terminal().setSelection({0, 0}, {0, 20});
+        widget.terminal().setSelection({0, 0}, {0, 40});
         QCOMPARE(QString::fromStdString(widget.terminal().selectedText()),
-                 QString("0123456789ABCDEFGHIJ"));
+                 QString::fromUtf8(line));
     }
 
     void wheelAtHistoryTopEmitsTopReached()

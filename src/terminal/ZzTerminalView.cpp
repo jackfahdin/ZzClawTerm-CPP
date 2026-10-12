@@ -24,7 +24,8 @@ ZzTerminalView::ZzTerminalView(QWidget *parent)
 {
     m_term = new ZzCoreTerminalWidget(this);
     setFocusProxy(m_term); // 视图级 setFocus（分屏焦点切换）落到终端组件
-    // Z1 暂缺：最小终端网格约束（setMinimumTerminalSize(24,6) 等价物）登记为 Z2 特性 9
+    // 最小终端网格约束（fork setMinimumTerminalSize(24,6) 等价物）已由
+    // ZzCoreTerminalWidget 自带：minimumSizeHint + 网格重算钳制 24×6（Z2 任务 8）。
 
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
