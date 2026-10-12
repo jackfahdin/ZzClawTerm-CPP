@@ -1,11 +1,13 @@
 #include "ZzCoreTerminalWidget.h"
 
 #include <QClipboard>
+#include <QContextMenuEvent>
 #include <QFontDatabase>
 #include <QFontMetrics>
 #include <QGuiApplication>
 #include <QInputMethodEvent>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPaintEvent>
@@ -741,14 +743,64 @@ void ZzCoreTerminalWidget::mouseReleaseEvent(QMouseEvent *event)
 {
     if (selecting_ && event->button() == Qt::LeftButton) {
         selecting_ = false;
-        if (term_.hasSelection()) {
-            const std::string text = term_.selectedText();
-            if (!text.empty())
-                QGuiApplication::clipboard()->setText(
-                    QString::fromStdString(text)); // 复制完整拼接行（含屏外）
-        }
+        copySelectionToClipboard(); // 复制完整拼接行（含屏外）
         event->accept();
         return;
     }
     QWidget::mouseReleaseEvent(event);
+}
+
+void ZzCoreTerminalWidget::selectAll()
+{
+    // 尾端钳到最后一条非空拼接行：全量区间 [0, lineCount) 会把末尾
+    // 空白屏行也选入，selectedText 对空白行逐行输出 '\n'（全选复制
+    // 会带出一串空行）；钳后口径 = 全部有内容的逻辑行。
+    const auto total = (std::int64_t)term_.unwrapView().lineCount();
+    std::int64_t last = total;
+    while (last > 0 && term_.unwrapView().lineAt((std::size_t)last - 1).cellCount() == 0)
+        --last;
+    if (last == 0) { // 全空：无可选内容
+        term_.clearSelection();
+        update();
+        return;
+    }
+    term_.setSelection({0, 0}, {last, 0}); // 逻辑行空间半开区间
+    update();
+}
+
+bool ZzCoreTerminalWidget::hasSelectionForMenu() const
+{
+    return term_.hasSelection();
+}
+
+void ZzCoreTerminalWidget::copySelectionToClipboard()
+{
+    if (!term_.hasSelection())
+        return;
+    const std::string text = term_.selectedText();
+    if (!text.empty())
+        QGuiApplication::clipboard()->setText(QString::fromStdString(text));
+}
+
+void ZzCoreTerminalWidget::contextMenuEvent(QContextMenuEvent *event)
+{
+    QMenu menu(this);
+    QAction *copy = menu.addAction(tr("复制"));
+    copy->setEnabled(hasSelectionForMenu());
+    QAction *paste = menu.addAction(tr("粘贴"));
+    paste->setEnabled(!QGuiApplication::clipboard()->text().isEmpty());
+    QAction *all = menu.addAction(tr("全选"));
+    menu.addSeparator();
+    QAction *clear = menu.addAction(tr("清空屏幕"));
+    QAction *chosen = menu.exec(event->globalPos());
+    if (chosen == copy) {
+        copySelectionToClipboard();
+    } else if (chosen == paste) {
+        term_.sendText(QGuiApplication::clipboard()->text().toUtf8().toStdString());
+    } else if (chosen == all) {
+        selectAll();
+    } else if (chosen == clear) {
+        // 本地清屏（ED3+ED2+Home）：shell 不感知，与 fork 时代 Clear 同口径
+        recvData(QByteArray("\x1b[3J\x1b[2J\x1b[H"));
+    }
 }

@@ -30,6 +30,7 @@
 
 #include "ZzTerminalPalette.h"
 
+class QContextMenuEvent;
 class QInputMethodEvent;
 class QPainter;
 class ZzStitchedLineView;
@@ -91,6 +92,14 @@ public:
     /** @brief 测试钩子：IME 组合中串（preedit，不进会话）。 */
     [[nodiscard]] QString preeditTextForTest() const { return preedit_; }
 
+    /** @brief 全选（逻辑行空间 [0,0) → 最后一条非空拼接行+1 半开区间；
+     *  尾部空白屏行不计入，全空时清空选区）。 */
+    void selectAll();
+    /** @brief 复制当前选区到剪贴板（右键菜单与鼠标释放共用）。 */
+    void copySelectionToClipboard();
+    /** @brief 是否存在非空选区（菜单项可用性）。 */
+    [[nodiscard]] bool hasSelectionForMenu() const;
+
 signals:
     /** @brief 键盘编码字节（终端→传输方向）。 */
     void sendData(const QByteArray &data);
@@ -122,6 +131,7 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void inputMethodEvent(QInputMethodEvent *event) override;
+    void contextMenuEvent(QContextMenuEvent *event) override;
 
 private:
     // —— 以下成员与 spike ZzCoreViewWidget 同名同义（含三个手测修复）——

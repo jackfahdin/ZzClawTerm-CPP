@@ -138,6 +138,38 @@ private slots:
         QCOMPARE(spy.count(), 0); // preedit 不进会话
     }
 
+    void contextMenuCopyEnabledOnlyWithSelection()
+    {
+        ZzCoreTerminalWidget widget;
+        widget.recvData(QByteArray("abcdef\r\n"));
+        QVERIFY(!widget.hasSelectionForMenu()); // 无选区：复制不可用
+        widget.terminal().setSelection({0, 0}, {0, 3});
+        QVERIFY(widget.hasSelectionForMenu());
+    }
+
+    void selectAllCoversWholeContent()
+    {
+        ZzCoreTerminalWidget widget;
+        widget.recvData(QByteArray("abc\r\ndef\r\n"));
+        widget.selectAll();
+        QCOMPARE(QString::fromStdString(widget.terminal().selectedText()),
+                 QString("abc\ndef\n")); // 行尾空格修剪口径以引擎 selectedText 为准
+    }
+
+    void unwrapLongLineFullCopyRegression()
+    {
+        // 回归 spike 三案（锚点重放/画笔外泄/端点+1）：不换行模式选中
+        // 超宽行，复制内容含屏外部分
+        ZzCoreTerminalWidget widget;
+        widget.show();
+        widget.resize(10 * widget.cellWidthForTest(), 5 * widget.cellHeightForTest());
+        widget.recvData(QByteArray("0123456789ABCDEFGHIJ\r\n")); // 20 列超宽
+        widget.setUnwrapMode(true);
+        widget.terminal().setSelection({0, 0}, {0, 20});
+        QCOMPARE(QString::fromStdString(widget.terminal().selectedText()),
+                 QString("0123456789ABCDEFGHIJ"));
+    }
+
     void wheelAtHistoryTopEmitsTopReached()
     {
         ZzCoreTerminalWidget widget;
