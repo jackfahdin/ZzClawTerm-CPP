@@ -27,6 +27,9 @@ ZzSshTransportAdapter::ZzSshTransportAdapter(QObject *parent)
 
 ZzSshTransportAdapter::~ZzSshTransportAdapter()
 {
+    // 析构期不外发信号（与 ZzLocalPtyTransport 同口径）：宿主可能已在析构
+    // 途中，stateChanged 传回半销毁对象会野指针崩溃。
+    blockSignals(true);
     close();
 }
 

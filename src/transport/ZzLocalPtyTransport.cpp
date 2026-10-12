@@ -78,6 +78,9 @@ ZzLocalPtyTransport::ZzLocalPtyTransport(QObject *parent)
 
 ZzLocalPtyTransport::~ZzLocalPtyTransport()
 {
+    // 析构期不外发信号：宿主（ZzTerminalView/ZzTabManager）可能已在析构途中，
+    // stateChanged 传回半销毁对象是野指针崩溃（2026-10-12 手测 core 实证）。
+    blockSignals(true);
     close();
 }
 

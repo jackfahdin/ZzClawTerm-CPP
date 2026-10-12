@@ -11,6 +11,7 @@
 #include "session/ZzSessionProfile.h"
 #include "tab/ZzTabManager.h"
 #include "terminal/ZzTerminalView.h"
+#include "transport/ZzLocalPtyTransport.h"
 #include "transport/ZzSshTransport.h"
 #include "transport/ZzTransportRegistry.h"
 #include "x11/ZzX11Service.h"
@@ -331,6 +332,33 @@ private slots:
         // 全部窗格重连后恢复非灰色
         QVERIFY(tabs.tabBar()->tabTextColor(0) != QColor(Qt::gray));
         QVERIFY(!tabs.isTabDisconnected(0));
+    }
+
+    void destructionWithLiveLocalSessionDoesNotCrash()
+    {
+        // Z1 回归（2026-10-12 手测 core 实证）：含活会话的 ZzTabManager 析构时，
+        // transport 析构经 close() 发 stateChanged，信号沿 view 透传 lambda
+        // 传回正在析构的管理器（wireView lambda → tabIndexOfView 访问已销毁
+        // 成员）→ SIGSEGV。修复：transport 析构期 blockSignals。
+        QVERIFY(ZzTransportRegistry::instance().registerTransport(
+            QStringLiteral("local"),
+            [](QObject *parent) -> ZzTransportInterface * {
+                return new ZzLocalPtyTransport(parent);
+            }));
+        {
+            ZzTabManager tabs;
+            ZzSessionProfile profile;
+            profile.id = QUuid::createUuid();
+            profile.name = QStringLiteral("本地壳");
+            profile.protocol = QStringLiteral("local");
+            tabs.openSession(profile);
+            auto *view = tabs.viewAt(0);
+            QVERIFY(view != nullptr);
+            QTRY_VERIFY_WITH_TIMEOUT(
+                view->transportState() == ZzTransportInterface::State::Connected,
+                5000);
+        } // 修复前：此大括号内析构崩溃；活到作用域外即通过
+        QTest::qWait(50); // 子进程收割等异步收尾落定
     }
 };
 
