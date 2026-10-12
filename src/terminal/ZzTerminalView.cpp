@@ -180,15 +180,18 @@ void ZzTerminalView::applySettings(const ZzAppSettings &settings)
     m_term->setTerminalFontPointSize(settings.fontSize());
 
     m_encoding = settings.encoding();
-    const auto encoding =
-        QStringConverter::encodingForName(settings.encoding().toUtf8().constData());
-    if (encoding) {
-        m_decoder = QStringDecoder(*encoding);
-        m_encoder = QStringEncoder(*encoding);
+    const QByteArray codecName = settings.encoding().toUtf8();
+    // 按编码名直接构造：UTF 系/Latin1 由 QtCore 内建，GBK 等东亚编码经
+    // QtCore iconv（Unix）或 Qt5Compat codec（Windows 等无 iconv 平台）按名
+    // 命中。encodingForName 只认内建枚举，看不到这些 codec，故不用它判有效。
+    QStringDecoder decoder(codecName.constData());
+    QStringEncoder encoder(codecName.constData());
+    if (decoder.isValid() && encoder.isValid()) {
+        m_decoder = std::move(decoder);
+        m_encoder = std::move(encoder);
     } else {
-        // 无效编码（Qt6 无 Qt5Compat 时 GBK 等东亚编码 encodingForName 返回
-        // nullopt）：保持默认态 decoder 会让 decode 静默返空串导致黑屏，
-        // 回退 UTF-8 保底。Qt5Compat 引入后 GBK 自动激活（Z2 立项）。
+        // 无效编码名（拼写错误等）回退 UTF-8 保底：保持默认态 decoder 会让
+        // decode 静默返空串导致黑屏。
         qWarning() << "ZzTerminalView: 无法识别的编码" << settings.encoding()
                    << "，收发转码回退 UTF-8";
         m_decoder = QStringDecoder(QStringConverter::Utf8);

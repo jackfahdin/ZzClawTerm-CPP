@@ -54,12 +54,6 @@ private slots:
         ZzTerminalView view;
         view.applySettings(settings);
         QCOMPARE(view.encoding(), QStringLiteral("GBK"));
-        // Qt6 core 的 QStringConverter 仅支持 UTF 系/Latin1；GBK 等东亚编码
-        // 需 Qt5Compat（QTextCodec），当前构建不支持时跳过字节级断言
-        //（编码名读存与转码器接线仍覆盖；引入 Qt5Compat 属 Z2 收口）
-        if (!QStringConverter::encodingForName("GBK")) {
-            QSKIP("当前 Qt 构建不支持 GBK 转码（需 Qt5Compat），仅覆盖编码名读存");
-        }
         auto *transport = new ZzMockTransport(&view);
         transport->echoEnabled = false;
         view.setTransport(transport);

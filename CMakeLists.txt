@@ -13,7 +13,7 @@ option(ZZCLAWTERM_BUILD_TESTS "构建 ZzClawTerm 测试" ON)
 
 include(cmake/ZzGitRevision.cmake)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Widgets Network Test Xml Multimedia)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Widgets Network Test Xml Multimedia Core5Compat)
 
 # 翻译工具链（可选）：缺失时跳过翻译嵌入，不影响主构建
 find_package(Qt6 QUIET COMPONENTS LinguistTools)

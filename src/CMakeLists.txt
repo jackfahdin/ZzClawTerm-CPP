@@ -90,6 +90,7 @@ target_link_libraries(ZzClawTermApp
         Qt6::Core
         Qt6::Widgets
         Qt6::Network
+        Qt6::Core5Compat
         ZzTerm::ZzTermCore
         ZzTerm::Pty
         ZzPureTools
