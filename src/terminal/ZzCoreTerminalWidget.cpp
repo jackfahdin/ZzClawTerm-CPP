@@ -11,6 +11,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPaintEvent>
+#include <QShowEvent>
 #include <QWheelEvent>
 
 #include <span>
@@ -136,6 +137,27 @@ void ZzCoreTerminalWidget::updateCellMetrics()
     cellAscent_ = fm.ascent();
 }
 
+void ZzCoreTerminalWidget::recomputeGridForCurrentSize()
+{
+    const int    cols    = qMax(1, size().width() / cellWidth_);
+    const int    rows    = qMax(1, size().height() / cellHeight_);
+    const ZzSize current = term_.size();
+    if (cols == current.cols && rows == current.rows)
+        return;
+
+    const int maxHBefore = maxHScrollOffset(); // M17b：resize 前横向口径快照
+    if (term_.resize(cols, rows)) {
+        traceResize(cols, rows);
+        emit gridResized(cols, rows);
+        emit scrollRangeChanged(maxScrollOffset()); // M14：reflow 改变历史行数
+        if (maxHScrollOffset() != maxHBefore)       // M17b：列数变化改变横向上限
+            emit hScrollRangeChanged(maxHScrollOffset());
+        setScrollOffset(scrollOffset_);             // 夹取
+        followCursorHorizontally();
+        update();
+    }
+}
+
 void ZzCoreTerminalWidget::setTerminalFontPointSize(int pointSize)
 {
     QFont f = font();
@@ -147,24 +169,10 @@ void ZzCoreTerminalWidget::setTerminalFontPointSize(int pointSize)
     // 的既有链路口径（gridResized → 宿主去抖转发 transport->resize）；
     // resizeEvent 是控件尺寸驱动，这里是字体驱动，换算与发射逻辑一致。
     // 隐藏时 size() 是 Qt 默认 100x30 占位尺寸（resizeEvent 也只在可见后
-    // 投递），此时不重算——show 后的 resizeEvent 会按新 cell 尺寸一次算准。
-    if (isVisible()) {
-        const int    cols    = qMax(1, size().width() / cellWidth_);
-        const int    rows    = qMax(1, size().height() / cellHeight_);
-        const ZzSize current = term_.size();
-        if (cols != current.cols || rows != current.rows) {
-            const int maxHBefore = maxHScrollOffset(); // resize 前横向口径快照
-            if (term_.resize(cols, rows)) {
-                traceResize(cols, rows);
-                emit gridResized(cols, rows);
-                emit scrollRangeChanged(maxScrollOffset());
-                if (maxHScrollOffset() != maxHBefore)
-                    emit hScrollRangeChanged(maxHScrollOffset());
-                setScrollOffset(scrollOffset_); // 夹取
-                followCursorHorizontally();
-            }
-        }
-    }
+    // 投递），此时不重算——show 后的 resizeEvent/showEvent 会按新 cell
+    // 尺寸一次算准。
+    if (isVisible())
+        recomputeGridForCurrentSize();
 
     updateGeometry();
     update();
@@ -507,24 +515,18 @@ QVariant ZzCoreTerminalWidget::inputMethodQuery(Qt::InputMethodQuery query) cons
 void ZzCoreTerminalWidget::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
+    // event->size() 即现行 size()（Qt 先置尺寸再投递），共用对账块。
+    recomputeGridForCurrentSize();
+}
 
-    const int cols = qMax(1, event->size().width() / cellWidth_);
-    const int rows = qMax(1, event->size().height() / cellHeight_);
-    const ZzSize current = term_.size();
-    if (cols == current.cols && rows == current.rows)
-        return;
-
-    const int maxHBefore = maxHScrollOffset(); // M17b：resize 前横向口径快照
-    if (term_.resize(cols, rows)) {
-        traceResize(cols, rows);
-        emit gridResized(cols, rows);
-        emit scrollRangeChanged(maxScrollOffset()); // M14：reflow 改变历史行数
-        if (maxHScrollOffset() != maxHBefore)       // M17b：列数变化改变横向上限
-            emit hScrollRangeChanged(maxHScrollOffset());
-        setScrollOffset(scrollOffset_);             // 夹取
-        followCursorHorizontally();
-        update();
-    }
+void ZzCoreTerminalWidget::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+    // 隐藏期字号变更不重算网格（size() 是占位尺寸）；重新可见时若 Qt 不
+    // 投递 resizeEvent（尺寸未变），网格会滞留旧 cell 口径——这里以现行
+    // cell 尺寸对现行控件尺寸补一次对账（幂等：口径一致时重算早退）。
+    recomputeGridForCurrentSize();
+    update();
 }
 
 int ZzCoreTerminalWidget::maxScrollOffset() const noexcept
@@ -633,6 +635,17 @@ QString ZzCoreTerminalWidget::visibleLineTextForTest(int row) const
 
 void ZzCoreTerminalWidget::wheelEvent(QWheelEvent *event)
 {
+    if (event->modifiers() & Qt::ControlModifier) {
+        const int steps = event->angleDelta().y() / 120;
+        if (steps != 0) {
+            // Ctrl+滚轮缩放：6-72pt 钳制；设置页改动经 applySettings 重置缩放
+            const int next = qBound(6, font().pointSize() + steps, 72);
+            if (next != font().pointSize())
+                setTerminalFontPointSize(next);
+            event->accept();
+            return;
+        }
+    }
     if (term_.isAlternateScreen()) { // Alternate 无历史（契约 lineCount 恒 0）
         event->ignore();
         return;

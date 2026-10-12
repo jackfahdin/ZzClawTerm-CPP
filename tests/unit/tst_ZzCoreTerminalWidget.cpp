@@ -193,6 +193,39 @@ private slots:
         QApplication::sendEvent(&widget, &up2);
         QCOMPARE(spy2.count(), 0);
     }
+
+    void ctrlWheelZoomsWithClamp()
+    {
+        ZzCoreTerminalWidget widget;
+        widget.setTerminalFontPointSize(12);
+        const auto wheelUp = [](QWidget *w) {
+            QWheelEvent e(QPointF(5, 5), QPointF(5, 5), QPoint(0, 0),
+                          QPoint(0, 120), Qt::NoButton, Qt::ControlModifier,
+                          Qt::NoScrollPhase, false);
+            QApplication::sendEvent(w, &e);
+        };
+        wheelUp(&widget);
+        QCOMPARE(widget.font().pointSize(), 13);
+        widget.setTerminalFontPointSize(6);
+        QWheelEvent down(QPointF(5, 5), QPointF(5, 5), QPoint(0, 0),
+                         QPoint(0, -120), Qt::NoButton, Qt::ControlModifier,
+                         Qt::NoScrollPhase, false);
+        QApplication::sendEvent(&widget, &down);
+        QCOMPARE(widget.font().pointSize(), 6); // 下限钳制
+    }
+
+    void hiddenTabFontSizeResyncsOnShow()
+    {
+        ZzCoreTerminalWidget widget;
+        widget.show();
+        widget.resize(100 * widget.cellWidthForTest(),
+                      30 * widget.cellHeightForTest());
+        widget.hide();
+        widget.setTerminalFontPointSize(20); // 隐藏期不重算（既有口径）
+        widget.show();                       // 重新可见必须补重算
+        const int expectCols = widget.size().width() / widget.cellWidthForTest();
+        QCOMPARE(widget.gridCols(), expectCols);
+    }
 };
 
 QTEST_MAIN(tst_ZzCoreTerminalWidget)

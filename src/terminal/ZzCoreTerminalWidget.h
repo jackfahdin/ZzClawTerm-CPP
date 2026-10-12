@@ -33,6 +33,7 @@
 class QContextMenuEvent;
 class QInputMethodEvent;
 class QPainter;
+class QShowEvent;
 class ZzStitchedLineView;
 
 /**
@@ -132,10 +133,14 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override;
     void inputMethodEvent(QInputMethodEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 
 private:
     // —— 以下成员与 spike ZzCoreViewWidget 同名同义（含三个手测修复）——
     void updateCellMetrics();
+    /** @brief 按现行 cell 尺寸与现行控件尺寸重算网格（resizeEvent/
+     *  setTerminalFontPointSize/showEvent 共用，emit 序列与守卫等价）。 */
+    void recomputeGridForCurrentSize();
     void paintWrapped(QPainter &painter);
     void paintUnwrapped(QPainter &painter);
     void paintSelectionOnWrappedRow(QPainter &painter, int row);
