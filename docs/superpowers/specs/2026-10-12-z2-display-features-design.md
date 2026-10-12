@@ -108,6 +108,12 @@
   注入，不可差分错位。
 - 若 generation 语义不足，走 ZzTermCore 小里程碑另行立项，
   不在 Z2 顺手改引擎。
+- **勘误 E-1**（2026-10-12 计划期核实）：原假设读回注入用既有
+  `prependPrimaryLines`，其语义实为「屏幕顶部插入、溢出裁回历史
+  最新端」（M16b 接缝归还专用），用于读回会顺序倒置；
+  ZzScrollback 无最旧端注入公共 API。定案：Z2 任务 5 前置
+  ZzTermCore M19 原语里程碑（`prependHistoryLines`：历史最旧端
+  注入 + droppedLineCount 同步 +N），验收标准见计划任务 5。
 
 ### 4.5 选区收口 + 右键菜单（任务 5）
 
