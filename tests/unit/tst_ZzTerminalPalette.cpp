@@ -16,7 +16,8 @@ private slots:
         QVERIFY(all.size() > 250);
         QVERIFY(all.contains(ZzTerminalPalette::defaultSchemeName()));
         // 字母序（设置页下拉框直接消费）
-        const QStringList sorted = all;
+        auto sorted = all;
+        sorted.sort(Qt::CaseInsensitive);
         QVERIFY(all == sorted);
     }
 
