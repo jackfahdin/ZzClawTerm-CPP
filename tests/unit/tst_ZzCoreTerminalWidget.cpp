@@ -52,6 +52,18 @@ private slots:
         QCOMPARE(last.at(1).toInt(), 30);
     }
 
+    void minimumGridClamped()
+    {
+        ZzCoreTerminalWidget widget;
+        widget.show();
+        widget.resize(5 * widget.cellWidthForTest(),
+                      2 * widget.cellHeightForTest());
+        QCOMPARE(widget.gridCols(), 24); // fork setMinimumTerminalSize(24,6) 等价
+        QCOMPARE(widget.gridRows(), 6);
+        QVERIFY(widget.minimumSizeHint().width() >= 24 * widget.cellWidthForTest());
+        QVERIFY(widget.minimumSizeHint().height() >= 6 * widget.cellHeightForTest());
+    }
+
     void selectionCopiesCells()
     {
         ZzCoreTerminalWidget widget;

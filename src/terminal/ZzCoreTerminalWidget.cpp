@@ -137,10 +137,17 @@ void ZzCoreTerminalWidget::updateCellMetrics()
     cellAscent_ = fm.ascent();
 }
 
+QSize ZzCoreTerminalWidget::minimumSizeHint() const
+{
+    return {24 * cellWidth_, 6 * cellHeight_};
+}
+
 void ZzCoreTerminalWidget::recomputeGridForCurrentSize()
 {
-    const int    cols    = qMax(1, size().width() / cellWidth_);
-    const int    rows    = qMax(1, size().height() / cellHeight_);
+    // 最小网格钳制（fork setMinimumTerminalSize(24,6) 等价物）：控件被布局
+    // 压得更小时网格保持 24×6，多余内容裁剪显示——防护语义优先于像素贴合。
+    const int    cols    = qMax(24, size().width() / cellWidth_);
+    const int    rows    = qMax(6,  size().height() / cellHeight_);
     const ZzSize current = term_.size();
     if (cols == current.cols && rows == current.rows)
         return;

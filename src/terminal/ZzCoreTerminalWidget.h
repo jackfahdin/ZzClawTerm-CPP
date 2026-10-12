@@ -58,6 +58,9 @@ public:
     [[nodiscard]] int gridCols() const noexcept { return term_.size().cols; }
     [[nodiscard]] int gridRows() const noexcept { return term_.size().rows; }
 
+    /** @brief 最小网格 24×6 换算的最小尺寸提示（fork 防护语义等价物）。 */
+    [[nodiscard]] QSize minimumSizeHint() const override;
+
     /** @brief 不换行显示模式开关（M17b；Ctrl+Shift+U 亦切换）。 */
     void setUnwrapMode(bool on);
     [[nodiscard]] bool unwrapMode() const noexcept { return unwrapMode_; }

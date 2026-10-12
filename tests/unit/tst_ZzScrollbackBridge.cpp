@@ -225,41 +225,48 @@ private slots:
         term.show(); // 隐藏 widget 的 resize() 不投递 QResizeEvent（Qt 延迟到 show）
         const int cw = term.cellWidthForTest();
         const int ch = term.cellHeightForTest();
-        term.resize(10 * cw, 4 * ch); // resizeEvent 链路：term 10x4
+        // 最小网格钳制（24×6）后 widget 路径最小网格即 24 列 × 6 行；
+        // 26 字符行在 24 列折 2 物理行、在 40 列不折，保住折链拼合场景
+        const QString pad(20, QLatin1Char('x')); // "wrapN-" + 20 = 26 字符
+        term.resize(24 * cw, 6 * ch); // resizeEvent 链路：term 24x6
         ZzLogEngine engine(ZzLogEngine::Config{});
         QVERIFY(engine.open());
         ZzScrollbackBridge bridge(&term, &engine);
 
-        // 8 条 12 字符行：10 列每条折 2 物理行 → 16 行 + 末行 \r\n 再挤
-        // 1 行 → 历史 13，屏 4（含空白光标行）
+        // 8 条 26 字符行：24 列每条折 2 物理行 → 16 行 + 末行 \r\n 再挤
+        // 1 行 → 历史 11，屏 6（含空白光标行）
         for (int i = 0; i < 8; ++i)
-            term.recvData(QStringLiteral("wrap%1-xxxxxxx\r\n").arg(i).toUtf8());
-        QCOMPARE(engine.totalLines(), 13ULL);
-        const QVector<ZzLogLine> prefixBefore = engine.getLines(0, 13);
+            term.recvData(QStringLiteral("wrap%1-%2\r\n").arg(i).arg(pad).toUtf8());
+        QCOMPARE(engine.totalLines(), 11ULL);
+        const QVector<ZzLogLine> prefixBefore = engine.getLines(0, 11);
 
-        // 变宽 reflow：10 → 40 列，折链拼合且屏从历史底部回补，
-        // 历史 13 → 5（行身份重建，dropped 不计重组）；gridResized 发射时
-        // 复位已完成（游标 = 新 newest = 5），不依赖下一个 feed
-        term.resize(40 * cw, 4 * ch);
-        QCOMPARE(term.terminal().historyView().lineCount(), std::size_t(5));
+        // 变宽 reflow：24 → 40 列，折链拼合且屏从历史底部回补，
+        // 历史 11 → 3（行身份重建，dropped 不计重组）；gridResized 发射时
+        // 复位已完成（游标 = 新 newest = 3），不依赖下一个 feed
+        term.resize(40 * cw, 6 * ch);
+        QCOMPARE(term.terminal().historyView().lineCount(), std::size_t(3));
 
-        // reflow 后首个 feed：滚出的 2 行正常落盘（审查修复②：不再被回锚
-        // 吞掉）；屏上重组行以新形态（拼合行）落盘属边界既知形态——其旧
-        // 形态（折行对）仍在前缀中保留
-        term.recvData(QByteArray("new-1\r\nnew-2\r\n"));
-        QCOMPARE(engine.totalLines(), 15ULL);
-        term.recvData(QByteArray("new-3\r\nnew-4\r\nnew-5\r\n"));
-        QCOMPARE(engine.totalLines(), 18ULL);
+        // reflow 后首个 feed：滚出的重组屏上行正常落盘（审查修复②：不再
+        // 被回锚吞掉）；6 行屏喂足 5+3 行让新行也滚出，验证新行落盘不丢。
+        // 屏上重组行以新形态（拼合行）落盘属边界既知形态——其旧形态
+        //（折行对）仍在前缀中保留
+        term.recvData(QByteArray("new-1\r\nnew-2\r\nnew-3\r\nnew-4\r\nnew-5\r\n"));
+        QCOMPARE(engine.totalLines(), 16ULL);
+        term.recvData(QByteArray("new-6\r\nnew-7\r\nnew-8\r\n"));
+        QCOMPARE(engine.totalLines(), 19ULL);
 
         // 重组前落盘前缀原样保留（无重写）
-        QCOMPARE(logTexts(engine.getLines(0, 13)), logTexts(prefixBefore));
+        QCOMPARE(logTexts(engine.getLines(0, 11)), logTexts(prefixBefore));
         // 新追加段：重组后滚出的屏上行 + 新行，各一次
-        const QVector<ZzLogLine> appended = engine.getLines(13, 5);
-        QCOMPARE(appended.at(0).text, QStringLiteral("wrap5-xxxxxxx"));
-        QCOMPARE(appended.at(1).text, QStringLiteral("wrap6-xxxxxxx"));
-        QCOMPARE(appended.at(2).text, QStringLiteral("wrap7-xxxxxxx"));
-        QCOMPARE(appended.at(3).text, QStringLiteral("new-1"));
-        QCOMPARE(appended.at(4).text, QStringLiteral("new-2"));
+        const QVector<ZzLogLine> appended = engine.getLines(11, 8);
+        QCOMPARE(appended.at(0).text, QStringLiteral("wrap3-%1").arg(pad));
+        QCOMPARE(appended.at(1).text, QStringLiteral("wrap4-%1").arg(pad));
+        QCOMPARE(appended.at(2).text, QStringLiteral("wrap5-%1").arg(pad));
+        QCOMPARE(appended.at(3).text, QStringLiteral("wrap6-%1").arg(pad));
+        QCOMPARE(appended.at(4).text, QStringLiteral("wrap7-%1").arg(pad));
+        QCOMPARE(appended.at(5).text, QStringLiteral("new-1"));
+        QCOMPARE(appended.at(6).text, QStringLiteral("new-2"));
+        QCOMPARE(appended.at(7).text, QStringLiteral("new-3"));
     }
 
     /**
@@ -272,22 +279,22 @@ private slots:
         term.show();
         const int cw = term.cellWidthForTest();
         const int ch = term.cellHeightForTest();
-        term.resize(40 * cw, 4 * ch); // 40 列：30 字符行不折
+        term.resize(40 * cw, 6 * ch); // 40 列：30 字符行不折（最小网格钳制后行下限 6）
         ZzLogEngine engine(ZzLogEngine::Config{});
         QVERIFY(engine.open());
         ZzScrollbackBridge bridge(&term, &engine);
 
-        // 8 条 30 字符行：40 列每条 1 物理行，+ 末行 \r\n 再挤 1 行 → 历史 5
+        // 8 条 30 字符行：40 列每条 1 物理行，+ 末行 \r\n 再挤 1 行 → 历史 3
         for (int i = 0; i < 8; ++i)
             term.recvData(
                 QStringLiteral("segment-%1-abcdefghij0123456789\r\n").arg(i).toUtf8());
-        QCOMPARE(engine.totalLines(), 5ULL);
+        QCOMPARE(engine.totalLines(), 3ULL);
 
-        // 缩列 reflow：40 → 10 列，每条折 3 物理行，行数膨胀（行身份重建）
-        term.resize(10 * cw, 4 * ch);
+        // 缩列 reflow：40 → 24 列（钳制下限），每条折 2 物理行，行数膨胀（行身份重建）
+        term.resize(24 * cw, 6 * ch);
         const std::size_t histAfterReflow =
             term.terminal().historyView().lineCount();
-        QVERIFY(histAfterReflow > 5); // 前提：缩列使历史行数增长
+        QVERIFY(histAfterReflow > 3); // 前提：缩列使历史行数增长
 
         // 复位已在 gridResized 完成：reflow 后 feed 只追加真实 scrollout，
         // 膨胀出的重组行一行都不重复落盘（自校准：滚动数取 Core 实测增量）
@@ -315,7 +322,7 @@ private slots:
         term.show();
         const int cw = term.cellWidthForTest();
         const int ch = term.cellHeightForTest();
-        term.resize(40 * cw, 4 * ch);
+        term.resize(40 * cw, 6 * ch); // 最小网格钳制后行下限 6
         ZzLogEngine engine(ZzLogEngine::Config{});
         QVERIFY(engine.open());
         ZzScrollbackBridge bridge(&term, &engine);
@@ -323,13 +330,13 @@ private slots:
         for (int i = 0; i < 8; ++i)
             term.recvData(
                 QStringLiteral("segment-%1-abcdefghij0123456789\r\n").arg(i).toUtf8());
-        QCOMPARE(engine.totalLines(), 5ULL);
+        QCOMPARE(engine.totalLines(), 3ULL); // 8 行 + 末行 \r\n 进 6 行屏
 
-        // 缩列 reflow 后立刻突发输出（同一帧，无事件循环间歇）
-        term.resize(10 * cw, 4 * ch);
+        // 缩列 reflow（40 → 24 列钳制下限）后立刻突发输出（同一帧，无事件循环间歇）
+        term.resize(24 * cw, 6 * ch);
         const std::size_t histAfterReflow =
             term.terminal().historyView().lineCount();
-        QVERIFY(histAfterReflow > 5);
+        QVERIFY(histAfterReflow > 3);
         const quint64 engineBefore = engine.totalLines();
         QByteArray burst;
         for (int i = 1; i <= 8; ++i)
@@ -342,7 +349,7 @@ private slots:
             quint64(hv.lineCount()) - quint64(histAfterReflow);
         QVERIFY(scrolled > 0);
         QCOMPARE(engine.totalLines(), engineBefore + scrolled);
-        // 且新行确实落盘（burst-1 必滚出：8 行进 4 行屏）
+        // 且新行确实落盘（burst-1 必滚出：8 行进 6 行屏）
         QVERIFY(logTexts(engine.getLines(engineBefore, scrolled))
                     .contains(QStringLiteral("burst-1")));
         // 重组行不重复落盘（与发现①同口径）
@@ -400,30 +407,32 @@ private slots:
         term.show();
         const int cw = term.cellWidthForTest();
         const int ch = term.cellHeightForTest();
-        term.resize(40 * cw, 4 * ch);
+        term.resize(40 * cw, 6 * ch); // 最小网格钳制后行下限 6
         ZzLogEngine engine(ZzLogEngine::Config{});
         QVERIFY(engine.open());
         ZzScrollbackBridge bridge(&term, &engine);
 
-        // 8 行进 4 行屏：历史 5（line-0..4 落盘），屏 [line-5..7, 光标行]
+        // 8 行进 6 行屏：历史 3（line-0..2 落盘），屏 [line-3..7, 光标行]
         for (int i = 0; i < 8; ++i)
             term.recvData(QStringLiteral("line-%1\r\n").arg(i).toUtf8());
-        QCOMPARE(engine.totalLines(), 5ULL);
+        QCOMPARE(engine.totalLines(), 3ULL);
 
         term.recvData(QByteArray("\033[?1049h")); // 进 Alternate：可见历史归零
         QCOMPARE(term.terminal().historyView().lineCount(), std::size_t(0));
         term.recvData(QByteArray("alt-screen-output\r\n")); // alt 输出不进历史/日志
-        QCOMPARE(engine.totalLines(), 5ULL);
+        QCOMPARE(engine.totalLines(), 3ULL);
 
         // alt 期间列变：Primary 历史照样 reflow（不可见），gridResized 发射
-        term.resize(20 * cw, 4 * ch);
+        term.resize(24 * cw, 6 * ch); // 24 列 = 钳制下限，仍构成 40 → 24 列变
 
-        // 回主屏 + 突发输出：恢复的历史（line-0..4）不得重复落盘，
-        // 只有真实 scrollout（屏上行 line-5..7）追加
-        term.recvData(QByteArray("\033[?1049lpost-a\r\npost-b\r\npost-c\r\n"));
+        // 回主屏 + 突发输出：恢复的历史（line-0..2）不得重复落盘，
+        // 只有真实 scrollout（屏上行 line-3..7）追加；喂足 5 行使 5 条
+        // 屏上旧行全部滚出，保住「每条 line-i 恰好一次」终检
+        term.recvData(QByteArray("\033[?1049lpost-a\r\npost-b\r\npost-c\r\npost-d\r\npost-e\r\n"));
         QCOMPARE(engine.totalLines(), 8ULL);
-        QCOMPARE(logTexts(engine.getLines(5, 3)),
-                 QStringList({QStringLiteral("line-5"), QStringLiteral("line-6"),
+        QCOMPARE(logTexts(engine.getLines(3, 5)),
+                 QStringList({QStringLiteral("line-3"), QStringLiteral("line-4"),
+                              QStringLiteral("line-5"), QStringLiteral("line-6"),
                               QStringLiteral("line-7")}));
         // 全日志逐条核对：每条 line-i 恰好一次（无重复块）
         const QStringList all = logTexts(engine.getLines(0, engine.totalLines()));
