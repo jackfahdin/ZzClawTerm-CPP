@@ -653,7 +653,21 @@ void ZzCoreTerminalWidget::wheelEvent(QWheelEvent *event)
             return;
         }
     }
-    if (term_.isAlternateScreen()) { // Alternate 无历史（契约 lineCount 恒 0）
+    if (term_.isAlternateScreen()) {
+        // Alternate 无历史：滚轮转方向键发给会话（vim/less 翻行），每档 3 行。
+        // Z3 鼠标上报落地后此处需加「上报开启时不转」分支（登记，不在本任务）。
+        const int steps = event->angleDelta().y() / 120;
+        if (steps != 0) {
+            ZzKeyEvent keyEvent;
+            keyEvent.action    = ZzKeyEvent::Action::Press;
+            keyEvent.modifiers = ZzKeyModifier::None;
+            keyEvent.key       = steps > 0 ? ZzKeyEvent::Key::Up
+                                           : ZzKeyEvent::Key::Down;
+            for (int i = 0, n = qAbs(steps) * 3; i < n; ++i)
+                term_.sendKey(keyEvent);
+            event->accept();
+            return;
+        }
         event->ignore();
         return;
     }

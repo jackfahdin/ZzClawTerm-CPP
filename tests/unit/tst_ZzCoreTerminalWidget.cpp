@@ -230,6 +230,24 @@ private slots:
         QCOMPARE(widget.font().pointSize(), 6); // 下限钳制
     }
 
+    void alternateScreenWheelSendsArrowKeys()
+    {
+        ZzCoreTerminalWidget widget;
+        widget.recvData(QByteArray("\x1b[?1049h")); // 进 Alternate 屏
+        QSignalSpy spy(&widget, &ZzCoreTerminalWidget::sendData);
+        QWheelEvent up(QPointF(5, 5), QPointF(5, 5), QPoint(0, 0),
+                       QPoint(0, 120), Qt::NoButton, Qt::NoModifier,
+                       Qt::NoScrollPhase, false);
+        QApplication::sendEvent(&widget, &up);
+        QVERIFY(spy.count() >= 1);
+        QByteArray all;
+        for (const auto &call : spy)
+            all += call.at(0).toByteArray();
+        // 每滚轮档 3 行：3 次 ↑（普通模式 ESC[A，应用光标模式 ESC OA）
+        QVERIFY(all.count('A') >= 3);
+        widget.recvData(QByteArray("\x1b[?1049l")); // 回 Primary
+    }
+
     void hiddenTabFontSizeResyncsOnShow()
     {
         ZzCoreTerminalWidget widget;
