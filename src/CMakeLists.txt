@@ -35,6 +35,9 @@ set(ZZCLAWTERM_APP_SOURCES
     terminal/ZzCoreTerminalWidget.cpp
     terminal/ZzScrollbackBridge.h
     terminal/ZzScrollbackBridge.cpp
+    terminal/ZzTerminalPalette.h
+    terminal/ZzTerminalPalette.cpp
+    terminal/colorschemes/colorschemes.qrc
     tab/ZzTabManager.h
     tab/ZzTabManager.cpp
     tab/ZzSplitContainer.h

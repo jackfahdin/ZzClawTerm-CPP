@@ -48,6 +48,7 @@ zz_add_qtest(tst_ZzTransportRegistry unit/tst_ZzTransportRegistry.cpp)
 zz_add_qtest(tst_ZzLocalPtyTransport unit/tst_ZzLocalPtyTransport.cpp)
 zz_add_qtest(tst_ZzTerminalView unit/tst_ZzTerminalView.cpp)
 zz_add_qtest(tst_ZzCoreTerminalWidget unit/tst_ZzCoreTerminalWidget.cpp)
+zz_add_qtest(tst_ZzTerminalPalette unit/tst_ZzTerminalPalette.cpp)
 zz_add_qtest(tst_ZzTabManager unit/tst_ZzTabManager.cpp)
 # Z1 摘除（QTermWidget 直构造）——随特性收口重写回（总体设计 §6）
 # zz_add_qtest(tst_ZzSplitContainer unit/tst_ZzSplitContainer.cpp)

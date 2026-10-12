@@ -1,0 +1,774 @@
+<RCC>
+    <qresource prefix="/colorschemes">
+        <file>0x96f.colorscheme</file>
+        <file>12-bit Rainbow.colorscheme</file>
+        <file>13th Floor.colorscheme</file>
+        <file>3024 Day.colorscheme</file>
+        <file>3024 Night.colorscheme</file>
+        <file>Aardvark Blue.colorscheme</file>
+        <file>Aardvark Ink.colorscheme</file>
+        <file>Abandoned.colorscheme</file>
+        <file>Abernathy.colorscheme</file>
+        <file>Acid Lime.colorscheme</file>
+        <file>Adobe Moon.colorscheme</file>
+        <file>Adventure.colorscheme</file>
+        <file>Adventure Time.colorscheme</file>
+        <file>Adwaita.colorscheme</file>
+        <file>Adwaita Dark.colorscheme</file>
+        <file>Afterglow.colorscheme</file>
+        <file>After Hours.colorscheme</file>
+        <file>Afterimage.colorscheme</file>
+        <file>Agave Dusk.colorscheme</file>
+        <file>Aizen Dark.colorscheme</file>
+        <file>Aizen Light.colorscheme</file>
+        <file>Alabaster.colorscheme</file>
+        <file>Alien Blood.colorscheme</file>
+        <file>Amber CRT Retro.colorscheme</file>
+        <file>Andromeda.colorscheme</file>
+        <file>Apple Classic.colorscheme</file>
+        <file>Apple System Colors.colorscheme</file>
+        <file>Apple System Colors Light.colorscheme</file>
+        <file>Arcoiris.colorscheme</file>
+        <file>Ardoise.colorscheme</file>
+        <file>Argonaut.colorscheme</file>
+        <file>Arizona Monsoon.colorscheme</file>
+        <file>Arthur.colorscheme</file>
+        <file>Atelier Sulphurpool.colorscheme</file>
+        <file>Atlas Ragnarok.colorscheme</file>
+        <file>Atom.colorscheme</file>
+        <file>Atom One Dark.colorscheme</file>
+        <file>Atom One Light.colorscheme</file>
+        <file>Aubade.colorscheme</file>
+        <file>Aura.colorscheme</file>
+        <file>Aura Dark.colorscheme</file>
+        <file>Aurora.colorscheme</file>
+        <file>Aurora Drift.colorscheme</file>
+        <file>Autumn After Dark.colorscheme</file>
+        <file>Ayu.colorscheme</file>
+        <file>Ayu Light.colorscheme</file>
+        <file>Ayu Mirage.colorscheme</file>
+        <file>Aztec Sunset.colorscheme</file>
+        <file>Banana Blueberry.colorscheme</file>
+        <file>Barrel Cactus.colorscheme</file>
+        <file>base16-icy.colorscheme</file>
+        <file>Batman.colorscheme</file>
+        <file>Belafonte Day.colorscheme</file>
+        <file>Belafonte Night.colorscheme</file>
+        <file>Belfry.colorscheme</file>
+        <file>Birds Of Paradise.colorscheme</file>
+        <file>Black Box Recorder.colorscheme</file>
+        <file>Black Cat.colorscheme</file>
+        <file>Black Metal (Bathory).colorscheme</file>
+        <file>Black Metal (Burzum).colorscheme</file>
+        <file>Black Metal.colorscheme</file>
+        <file>Black Metal (Dark Funeral).colorscheme</file>
+        <file>Black Metal (Gorgoroth).colorscheme</file>
+        <file>Black Metal (Immortal).colorscheme</file>
+        <file>Black Metal (Khold).colorscheme</file>
+        <file>Black Metal (Marduk).colorscheme</file>
+        <file>Black Metal (Mayhem).colorscheme</file>
+        <file>Black Metal (Nile).colorscheme</file>
+        <file>Black Metal (Venom).colorscheme</file>
+        <file>Blazer.colorscheme</file>
+        <file>Blood Moon.colorscheme</file>
+        <file>Blue Berry Pie.colorscheme</file>
+        <file>Blue Dolphin.colorscheme</file>
+        <file>Blue Matrix.colorscheme</file>
+        <file>Blueprint.colorscheme</file>
+        <file>Bluloco Dark.colorscheme</file>
+        <file>Bluloco Light.colorscheme</file>
+        <file>Bone Yard.colorscheme</file>
+        <file>Borland.colorscheme</file>
+        <file>Box.colorscheme</file>
+        <file>branch.colorscheme</file>
+        <file>Breadog.colorscheme</file>
+        <file>Breeze.colorscheme</file>
+        <file>Bright Lights.colorscheme</file>
+        <file>Broadcast.colorscheme</file>
+        <file>Brogrammer.colorscheme</file>
+        <file>Builtin Dark.colorscheme</file>
+        <file>Builtin Light.colorscheme</file>
+        <file>Builtin Pastel Dark.colorscheme</file>
+        <file>Builtin Tango Dark.colorscheme</file>
+        <file>Builtin Tango Light.colorscheme</file>
+        <file>C64.colorscheme</file>
+        <file>Cactus Bloom.colorscheme</file>
+        <file>Calamity.colorscheme</file>
+        <file>Caliche.colorscheme</file>
+        <file>Candlelight.colorscheme</file>
+        <file>Candy Corn.colorscheme</file>
+        <file>Canyon Shadow.colorscheme</file>
+        <file>Canyon Walnut.colorscheme</file>
+        <file>Carbonfox.colorscheme</file>
+        <file>Carbon Paper.colorscheme</file>
+        <file>Cassette Tape.colorscheme</file>
+        <file>Catppuccin Frappe.colorscheme</file>
+        <file>Catppuccin Latte.colorscheme</file>
+        <file>Catppuccin Macchiato.colorscheme</file>
+        <file>Catppuccin Mocha.colorscheme</file>
+        <file>Catthode.colorscheme</file>
+        <file>CGA.colorscheme</file>
+        <file>Chalkboard.colorscheme</file>
+        <file>Chalk.colorscheme</file>
+        <file>Challenger Deep.colorscheme</file>
+        <file>Charcoal.colorscheme</file>
+        <file>Chester.colorscheme</file>
+        <file>Cholla.colorscheme</file>
+        <file>Ciapre.colorscheme</file>
+        <file>Citrus Ink.colorscheme</file>
+        <file>Citruszest.colorscheme</file>
+        <file>Claude.colorscheme</file>
+        <file>Claude Dark.colorscheme</file>
+        <file>Claude Light.colorscheme</file>
+        <file>Clear Dark.colorscheme</file>
+        <file>Clear Light.colorscheme</file>
+        <file>Clockwork Gold.colorscheme</file>
+        <file>CLRS.colorscheme</file>
+        <file>Cobalt2.colorscheme</file>
+        <file>Cobalt Neon.colorscheme</file>
+        <file>Cobalt Next.colorscheme</file>
+        <file>Cobalt Next Dark.colorscheme</file>
+        <file>Cobalt Next Minimal.colorscheme</file>
+        <file>Cobweb.colorscheme</file>
+        <file>Coffee Theme.colorscheme</file>
+        <file>Cold Storage.colorscheme</file>
+        <file>Cool Night.colorscheme</file>
+        <file>Copper Canyon.colorscheme</file>
+        <file>Count Terminal.colorscheme</file>
+        <file>Crayon Pony Fish.colorscheme</file>
+        <file>CRT Afterglow.colorscheme</file>
+        <file>CRT Amber.colorscheme</file>
+        <file>Crypt Keeper.colorscheme</file>
+        <file>Crystal Ball.colorscheme</file>
+        <file>Cursed VHS.colorscheme</file>
+        <file>Cursor Dark.colorscheme</file>
+        <file>Cursor Light.colorscheme</file>
+        <file>Cutie Pro.colorscheme</file>
+        <file>Cyberdyne.colorscheme</file>
+        <file>Cyberpunk.colorscheme</file>
+        <file>cyberpunk-icy.colorscheme</file>
+        <file>Cyberpunk Scarlet Protocol.colorscheme</file>
+        <file>Dalton Dark.colorscheme</file>
+        <file>Dark 2026.colorscheme</file>
+        <file>Dark+.colorscheme</file>
+        <file>Darkermatrix.colorscheme</file>
+        <file>Darkmatrix.colorscheme</file>
+        <file>Dark Modern.colorscheme</file>
+        <file>Dark Pastel.colorscheme</file>
+        <file>Darkside.colorscheme</file>
+        <file>datum (dark).colorscheme</file>
+        <file>datum (light).colorscheme</file>
+        <file>Dawnfox.colorscheme</file>
+        <file>Daybreak.colorscheme</file>
+        <file>Daybreaker.colorscheme</file>
+        <file>Dayfox.colorscheme</file>
+        <file>Dead Letter Office.colorscheme</file>
+        <file>Deep.colorscheme</file>
+        <file>Deep Current.colorscheme</file>
+        <file>Desert Bloom.colorscheme</file>
+        <file>Desert.colorscheme</file>
+        <file>Desert Moon.colorscheme</file>
+        <file>Desert Morning.colorscheme</file>
+        <file>Desert Rose.colorscheme</file>
+        <file>Desert Thunder.colorscheme</file>
+        <file>Detuned.colorscheme</file>
+        <file>Dimidium.colorscheme</file>
+        <file>Dimmed Monokai.colorscheme</file>
+        <file>Django.colorscheme</file>
+        <file>Django Reborn Again.colorscheme</file>
+        <file>Django Smooth.colorscheme</file>
+        <file>Dogxi Misty.colorscheme</file>
+        <file>Doom One.colorscheme</file>
+        <file>Doom Peacock.colorscheme</file>
+        <file>Dot Gov.colorscheme</file>
+        <file>Dracula+.colorscheme</file>
+        <file>Dracula.colorscheme</file>
+        <file>Dracula+ High Contrast.colorscheme</file>
+        <file>Driftwood.colorscheme</file>
+        <file>Duckbones.colorscheme</file>
+        <file>Duotone Dark.colorscheme</file>
+        <file>Duskfox.colorscheme</file>
+        <file>Earl Grey.colorscheme</file>
+        <file>Earthsong.colorscheme</file>
+        <file>Eclipse.colorscheme</file>
+        <file>Ectoplasm.colorscheme</file>
+        <file>Electron Highlighter.colorscheme</file>
+        <file>Electron Highlighter Day.colorscheme</file>
+        <file>Elegant.colorscheme</file>
+        <file>Elemental.colorscheme</file>
+        <file>Elementary.colorscheme</file>
+        <file>Embark.colorscheme</file>
+        <file>Ember.colorscheme</file>
+        <file>Emberglass.colorscheme</file>
+        <file>Ember Peak.colorscheme</file>
+        <file>Embers Dark.colorscheme</file>
+        <file>Emerald Synth.colorscheme</file>
+        <file>ENCOM.colorscheme</file>
+        <file>Espresso.colorscheme</file>
+        <file>Espresso Libre.colorscheme</file>
+        <file>Eventide.colorscheme</file>
+        <file>Everblush.colorscheme</file>
+        <file>Everforest Dark Hard.colorscheme</file>
+        <file>Everforest Dark Med.colorscheme</file>
+        <file>Everforest Dark Soft.colorscheme</file>
+        <file>Everforest Light Hard.colorscheme</file>
+        <file>Everforest Light Med.colorscheme</file>
+        <file>Everforest Light Soft.colorscheme</file>
+        <file>Evergreen.colorscheme</file>
+        <file>EVH FrankenTone.colorscheme</file>
+        <file>eyesclosed.colorscheme</file>
+        <file>Fahrenheit.colorscheme</file>
+        <file>Fairyfloss.colorscheme</file>
+        <file>Farmhouse Dark.colorscheme</file>
+        <file>Farmhouse Light.colorscheme</file>
+        <file>Fideloper.colorscheme</file>
+        <file>Firefly Traditional.colorscheme</file>
+        <file>Firefox Dev.colorscheme</file>
+        <file>Firewatch.colorscheme</file>
+        <file>Fish Tank.colorscheme</file>
+        <file>Flat.colorscheme</file>
+        <file>Flatland.colorscheme</file>
+        <file>Flexoki Dark.colorscheme</file>
+        <file>Flexoki Light.colorscheme</file>
+        <file>Floraverse.colorscheme</file>
+        <file>Forest Blue.colorscheme</file>
+        <file>Forge Ember.colorscheme</file>
+        <file>Framer.colorscheme</file>
+        <file>Front End Delight.colorscheme</file>
+        <file>Frostbyte.colorscheme</file>
+        <file>Frostline.colorscheme</file>
+        <file>Fun Forrest.colorscheme</file>
+        <file>Galaxy.colorscheme</file>
+        <file>Galizur.colorscheme</file>
+        <file>Ghost Circuit.colorscheme</file>
+        <file>Ghostty Default Style Dark.colorscheme</file>
+        <file>GitHub.colorscheme</file>
+        <file>GitHub Dark Colorblind.colorscheme</file>
+        <file>GitHub Dark.colorscheme</file>
+        <file>GitHub Dark Default.colorscheme</file>
+        <file>GitHub Dark Dimmed.colorscheme</file>
+        <file>GitHub Dark High Contrast.colorscheme</file>
+        <file>GitHub Light Colorblind.colorscheme</file>
+        <file>GitHub Light Default.colorscheme</file>
+        <file>GitHub Light High Contrast.colorscheme</file>
+        <file>GitLab Dark.colorscheme</file>
+        <file>GitLab Dark Grey.colorscheme</file>
+        <file>GitLab Light.colorscheme</file>
+        <file>Glacier.colorscheme</file>
+        <file>Gleam Classic.colorscheme</file>
+        <file>Gleam.colorscheme</file>
+        <file>Golden Retriever Cream.colorscheme</file>
+        <file>Golden Retriever Honey.colorscheme</file>
+        <file>Golden Retriever Red.colorscheme</file>
+        <file>Grape.colorscheme</file>
+        <file>Graphite.colorscheme</file>
+        <file>Grass.colorscheme</file>
+        <file>Graveyard Shift.colorscheme</file>
+        <file>Great Pumpkin.colorscheme</file>
+        <file>Green Phosphor CRT.colorscheme</file>
+        <file>Green Screen.colorscheme</file>
+        <file>Grey Green.colorscheme</file>
+        <file>Grok Day.colorscheme</file>
+        <file>Grok Night.colorscheme</file>
+        <file>Gruber Darker.colorscheme</file>
+        <file>Gruvbox Dark.colorscheme</file>
+        <file>Gruvbox Dark Hard.colorscheme</file>
+        <file>Gruvbox Light.colorscheme</file>
+        <file>Gruvbox Light Hard.colorscheme</file>
+        <file>Gruvbox Material.colorscheme</file>
+        <file>Gruvbox Material Dark.colorscheme</file>
+        <file>Gruvbox Material Light.colorscheme</file>
+        <file>Guezwhoz.colorscheme</file>
+        <file>Hacktober.colorscheme</file>
+        <file>Hardcore.colorscheme</file>
+        <file>Harper.colorscheme</file>
+        <file>Harvest Moon.colorscheme</file>
+        <file>Haunted House.colorscheme</file>
+        <file>Havn Daggry.colorscheme</file>
+        <file>Havn Skumring.colorscheme</file>
+        <file>HaX0R Blue.colorscheme</file>
+        <file>HaX0R Gr33N.colorscheme</file>
+        <file>HaX0R R3D.colorscheme</file>
+        <file>Heeler.colorscheme</file>
+        <file>Hellfire.colorscheme</file>
+        <file>High Desert Snow.colorscheme</file>
+        <file>Highway.colorscheme</file>
+        <file>Hipster Green.colorscheme</file>
+        <file>Hivacruz.colorscheme</file>
+        <file>Hocus Pocus.colorscheme</file>
+        <file>Homebrew.colorscheme</file>
+        <file>Hopscotch.256.colorscheme</file>
+        <file>Hopscotch.colorscheme</file>
+        <file>Horizon Bright.colorscheme</file>
+        <file>Horizon.colorscheme</file>
+        <file>Horizons.colorscheme</file>
+        <file>Hot Dog Stand.colorscheme</file>
+        <file>Hot Dog Stand (Mustard).colorscheme</file>
+        <file>Hurtado.colorscheme</file>
+        <file>Hybrid.colorscheme</file>
+        <file>Hyper.colorscheme</file>
+        <file>IBM 5153 CGA (Black).colorscheme</file>
+        <file>IBM 5153 CGA.colorscheme</file>
+        <file>Iceberg Dark.colorscheme</file>
+        <file>Iceberg Light.colorscheme</file>
+        <file>IC Green PPL.colorscheme</file>
+        <file>IC Orange PPL.colorscheme</file>
+        <file>Icy Glacier.colorscheme</file>
+        <file>Idea.colorscheme</file>
+        <file>Idle Toes.colorscheme</file>
+        <file>IR Black.colorscheme</file>
+        <file>IRIX Console.colorscheme</file>
+        <file>IRIX Terminal.colorscheme</file>
+        <file>Isocon Dark.colorscheme</file>
+        <file>Isocon Light.colorscheme</file>
+        <file>iTerm2 Dark Background.colorscheme</file>
+        <file>iTerm2 Default.colorscheme</file>
+        <file>iTerm2 Light Background.colorscheme</file>
+        <file>iTerm2 Pastel Dark Background.colorscheme</file>
+        <file>iTerm2 Smoooooth.colorscheme</file>
+        <file>iTerm2 Solarized Dark.colorscheme</file>
+        <file>iTerm2 Solarized Light.colorscheme</file>
+        <file>iTerm2 Tango Dark.colorscheme</file>
+        <file>iTerm2 Tango Light.colorscheme</file>
+        <file>Jackie Brown.colorscheme</file>
+        <file>Jack O' Lantern.colorscheme</file>
+        <file>Japanesque.colorscheme</file>
+        <file>Jellybeans.colorscheme</file>
+        <file>JetBrains Darcula.colorscheme</file>
+        <file>JetBrains Islands Dark.colorscheme</file>
+        <file>JetCalm Light.colorscheme</file>
+        <file>Jubi.colorscheme</file>
+        <file>Jute Espresso.colorscheme</file>
+        <file>Kanagawabones.colorscheme</file>
+        <file>Kanagawa Dragon.colorscheme</file>
+        <file>Kanagawa Lotus.colorscheme</file>
+        <file>Kanagawa Wave.colorscheme</file>
+        <file>Kanso Ink.colorscheme</file>
+        <file>Kanso Mist.colorscheme</file>
+        <file>Kanso Pearl.colorscheme</file>
+        <file>Kanso Zen.colorscheme</file>
+        <file>Karasu Night.colorscheme</file>
+        <file>Karasu Snow.colorscheme</file>
+        <file>Karma Dark.colorscheme</file>
+        <file>Karma Dark Dimmed.colorscheme</file>
+        <file>Karma Dark HC.colorscheme</file>
+        <file>Karma Light.colorscheme</file>
+        <file>Karma Light Dimmed.colorscheme</file>
+        <file>Karma Light HC.colorscheme</file>
+        <file>Keys Ocean Sunset.colorscheme</file>
+        <file>Keys Ocean Sunset HC.colorscheme</file>
+        <file>Kibble.colorscheme</file>
+        <file>Kitty Default.colorscheme</file>
+        <file>Kitty Low Contrast.colorscheme</file>
+        <file>Klein Void.colorscheme</file>
+        <file>Kolorit.colorscheme</file>
+        <file>Konsolas.colorscheme</file>
+        <file>Kurokula.colorscheme</file>
+        <file>Kwyjibo.colorscheme</file>
+        <file>Lab Fox.colorscheme</file>
+        <file>Laser.colorscheme</file>
+        <file>Last Broadcast.colorscheme</file>
+        <file>Later This Evening.colorscheme</file>
+        <file>Lavandula.colorscheme</file>
+        <file>Lemon Graphite.colorscheme</file>
+        <file>Letterpress.colorscheme</file>
+        <file>Light 2026.colorscheme</file>
+        <file>Light Owl.colorscheme</file>
+        <file>Liquid Carbon.colorscheme</file>
+        <file>Liquid Carbon Transparent.colorscheme</file>
+        <file>Lit Cell.colorscheme</file>
+        <file>Lit Cell Light.colorscheme</file>
+        <file>London Bonfire Night.colorscheme</file>
+        <file>London Columbia Road.colorscheme</file>
+        <file>London Embankment Dusk.colorscheme</file>
+        <file>London Soho Night.colorscheme</file>
+        <file>Lovelace.colorscheme</file>
+        <file>Lunar Dust.colorscheme</file>
+        <file>Madman's Diary.colorscheme</file>
+        <file>Man Page.colorscheme</file>
+        <file>Maple Jute.colorscheme</file>
+        <file>Mariana.colorscheme</file>
+        <file>Matcha Zen.colorscheme</file>
+        <file>Material.colorscheme</file>
+        <file>Material Dark.colorscheme</file>
+        <file>Material Darker.colorscheme</file>
+        <file>Material Design Colors.colorscheme</file>
+        <file>Material Ocean.colorscheme</file>
+        <file>Mathias.colorscheme</file>
+        <file>Matrix.colorscheme</file>
+        <file>Matte Black.colorscheme</file>
+        <file>Medallion.colorscheme</file>
+        <file>Melange Dark.colorscheme</file>
+        <file>Melange Light.colorscheme</file>
+        <file>Mellifluous.colorscheme</file>
+        <file>Mellow.colorscheme</file>
+        <file>Mesa Blue.colorscheme</file>
+        <file>Mesa Twilight.colorscheme</file>
+        <file>Mesila One.colorscheme</file>
+        <file>Miami Heat.colorscheme</file>
+        <file>Miasma.colorscheme</file>
+        <file>Midnight Arcade.colorscheme</file>
+        <file>Midnight In Mojave.colorscheme</file>
+        <file>Mirage.colorscheme</file>
+        <file>Misterioso.colorscheme</file>
+        <file>Modus Operandi.colorscheme</file>
+        <file>Modus Operandi Deuteranopia.colorscheme</file>
+        <file>Modus Operandi Tinted.colorscheme</file>
+        <file>Modus Operandi Tritanopia.colorscheme</file>
+        <file>Modus Vivendi.colorscheme</file>
+        <file>Modus Vivendi Deuteranopia.colorscheme</file>
+        <file>Modus Vivendi Tinted.colorscheme</file>
+        <file>Modus Vivendi Tritanopia.colorscheme</file>
+        <file>Molokai.colorscheme</file>
+        <file>Molten Core.colorscheme</file>
+        <file>Mona Lisa.colorscheme</file>
+        <file>Monokai Classic.colorscheme</file>
+        <file>Monokai Pro.colorscheme</file>
+        <file>Monokai Pro Light.colorscheme</file>
+        <file>Monokai Pro Light Sun.colorscheme</file>
+        <file>Monokai Pro Machine.colorscheme</file>
+        <file>Monokai Pro Octagon.colorscheme</file>
+        <file>Monokai Pro Ristretto.colorscheme</file>
+        <file>Monokai Pro Spectrum.colorscheme</file>
+        <file>Monokai Remastered.colorscheme</file>
+        <file>Monokai Soda.colorscheme</file>
+        <file>Monokai SublimeText.colorscheme</file>
+        <file>Monokai Vivid.colorscheme</file>
+        <file>Monospace Dark.colorscheme</file>
+        <file>Monospace Light.colorscheme</file>
+        <file>Monsoon Mesa.colorscheme</file>
+        <file>Monster Mash.colorscheme</file>
+        <file>Moonfly.colorscheme</file>
+        <file>Moonwalk.colorscheme</file>
+        <file>Motel Vacancy.colorscheme</file>
+        <file>N0Tch2K.colorscheme</file>
+        <file>Nachtschicht.colorscheme</file>
+        <file>Nebula Drift.colorscheme</file>
+        <file>Neobones Dark.colorscheme</file>
+        <file>Neobones Light.colorscheme</file>
+        <file>Neon Analog.colorscheme</file>
+        <file>Neon.colorscheme</file>
+        <file>Neon Purple.colorscheme</file>
+        <file>Neopolitan.colorscheme</file>
+        <file>Neutron.colorscheme</file>
+        <file>Nightfall.colorscheme</file>
+        <file>Nightfox.colorscheme</file>
+        <file>Night Lion V1.colorscheme</file>
+        <file>Night Lion V2.colorscheme</file>
+        <file>Night Owl.colorscheme</file>
+        <file>Night Owlish Light.colorscheme</file>
+        <file>Night Pharmacy.colorscheme</file>
+        <file>Niji.colorscheme</file>
+        <file>No Clown Fiesta.colorscheme</file>
+        <file>No Clown Fiesta Light.colorscheme</file>
+        <file>Noctis Azureus.colorscheme</file>
+        <file>Noctis Bordo.colorscheme</file>
+        <file>Noctis.colorscheme</file>
+        <file>Noctis Hibernus.colorscheme</file>
+        <file>Noctis Lilac.colorscheme</file>
+        <file>Noctis Lux.colorscheme</file>
+        <file>Noctis Minimus.colorscheme</file>
+        <file>Noctis Obscuro.colorscheme</file>
+        <file>Noctis Sereno.colorscheme</file>
+        <file>Noctis Uva.colorscheme</file>
+        <file>Noctis Viola.colorscheme</file>
+        <file>Nocturnal Winter.colorscheme</file>
+        <file>Nord.colorscheme</file>
+        <file>Nordfox.colorscheme</file>
+        <file>Nord Light.colorscheme</file>
+        <file>Nord Wave.colorscheme</file>
+        <file>Northstar.colorscheme</file>
+        <file>Novel.colorscheme</file>
+        <file>novmbr.colorscheme</file>
+        <file>Numbers Station.colorscheme</file>
+        <file>Nvim Dark.colorscheme</file>
+        <file>Nvim Light.colorscheme</file>
+        <file>Obsidian.colorscheme</file>
+        <file>Obsurdian.colorscheme</file>
+        <file>Ocean.colorscheme</file>
+        <file>Oceanic Material.colorscheme</file>
+        <file>Oceanic Next.colorscheme</file>
+        <file>Ocotillo.colorscheme</file>
+        <file>Ollie.colorscheme</file>
+        <file>One Dark Two.colorscheme</file>
+        <file>One Double Dark.colorscheme</file>
+        <file>One Double Light.colorscheme</file>
+        <file>One Half Dark.colorscheme</file>
+        <file>One Half Light.colorscheme</file>
+        <file>Onenord.colorscheme</file>
+        <file>Onenord Light.colorscheme</file>
+        <file>Opaline.colorscheme</file>
+        <file>Operator Mono Dark.colorscheme</file>
+        <file>Outrun Electric.colorscheme</file>
+        <file>Overnight Slumber.colorscheme</file>
+        <file>owl.colorscheme</file>
+        <file>Oxblood.colorscheme</file>
+        <file>Oxide.colorscheme</file>
+        <file>Oxocarbon.colorscheme</file>
+        <file>Ozz's Blizzard.colorscheme</file>
+        <file>Painted Desert.colorscheme</file>
+        <file>Pale Night Hc.colorscheme</file>
+        <file>Pandora.colorscheme</file>
+        <file>Paper Tiger.colorscheme</file>
+        <file>Paraiso Dark.colorscheme</file>
+        <file>Parchment.colorscheme</file>
+        <file>Patina.colorscheme</file>
+        <file>Patina Dark.colorscheme</file>
+        <file>Patina Dark Soft.colorscheme</file>
+        <file>Patina Lichen.colorscheme</file>
+        <file>Patina Light.colorscheme</file>
+        <file>Patina Moss.colorscheme</file>
+        <file>Patina Stellar.colorscheme</file>
+        <file>Paul Millr.colorscheme</file>
+        <file>Pencil Dark.colorscheme</file>
+        <file>Pencil Light.colorscheme</file>
+        <file>Peppermint.colorscheme</file>
+        <file>Petrified.colorscheme</file>
+        <file>Phala Green Dark.colorscheme</file>
+        <file>Piatto Light.colorscheme</file>
+        <file>Pierre Dark.colorscheme</file>
+        <file>Pierre Light.colorscheme</file>
+        <file>Pissed Off Pancakes.colorscheme</file>
+        <file>Pnevma.colorscheme</file>
+        <file>Poimandres.colorscheme</file>
+        <file>Poimandres Darker.colorscheme</file>
+        <file>Poimandres Storm.colorscheme</file>
+        <file>Poimandres White.colorscheme</file>
+        <file>Poison Apple.colorscheme</file>
+        <file>Poltergeist.colorscheme</file>
+        <file>Popping And Locking.colorscheme</file>
+        <file>Porcelain.colorscheme</file>
+        <file>Possessed Toaster.colorscheme</file>
+        <file>Powershell.colorscheme</file>
+        <file>Prickly Pear.colorscheme</file>
+        <file>Primary.colorscheme</file>
+        <file>Prince of Darkness.colorscheme</file>
+        <file>Prism.colorscheme</file>
+        <file>Pro.colorscheme</file>
+        <file>Pro Light.colorscheme</file>
+        <file>Pueblo Night.colorscheme</file>
+        <file>Pumpkin Patch.colorscheme</file>
+        <file>Pumpkin Spice.colorscheme</file>
+        <file>Purplepeter.colorscheme</file>
+        <file>Purple Portal.colorscheme</file>
+        <file>Purple Rain.colorscheme</file>
+        <file>Pyrokai.colorscheme</file>
+        <file>Pyrokai Light.colorscheme</file>
+        <file>RadicalReborn.colorscheme</file>
+        <file>Rapture.colorscheme</file>
+        <file>Raycast Dark.colorscheme</file>
+        <file>Raycast Light.colorscheme</file>
+        <file>Rebecca.colorscheme</file>
+        <file>Redacted.colorscheme</file>
+        <file>Red Alert.colorscheme</file>
+        <file>Red Planet.colorscheme</file>
+        <file>Red Rock.colorscheme</file>
+        <file>Red Sands.colorscheme</file>
+        <file>Relaxed.colorscheme</file>
+        <file>Retro.colorscheme</file>
+        <file>Retro Legends.colorscheme</file>
+        <file>Rhoads Concord.colorscheme</file>
+        <file>Rhoads Insipired.colorscheme</file>
+        <file>Rhoads Legacy.colorscheme</file>
+        <file>Rhoads LP.colorscheme</file>
+        <file>Rhoads RR Black.colorscheme</file>
+        <file>Rippedcasts.colorscheme</file>
+        <file>Rose Pine.colorscheme</file>
+        <file>Rose Pine Dawn.colorscheme</file>
+        <file>Rose Pine Moon.colorscheme</file>
+        <file>Rouge 2.colorscheme</file>
+        <file>Royal.colorscheme</file>
+        <file>Ryuuko.colorscheme</file>
+        <file>Safety Glass.colorscheme</file>
+        <file>Saguaro.colorscheme</file>
+        <file>Sakura.colorscheme</file>
+        <file>Salem.colorscheme</file>
+        <file>Sandstone Classic.colorscheme</file>
+        <file>Sandstone Ink.colorscheme</file>
+        <file>Sandstone Warm.colorscheme</file>
+        <file>Sauber.colorscheme</file>
+        <file>Scabos Sand.colorscheme</file>
+        <file>Scarlet Protocol.colorscheme</file>
+        <file>Seafoam Pastel.colorscheme</file>
+        <file>Seance.colorscheme</file>
+        <file>Sea Shells.colorscheme</file>
+        <file>Sedona.colorscheme</file>
+        <file>SeedFlip Abyss.colorscheme</file>
+        <file>SeedFlip Amethyst.colorscheme</file>
+        <file>SeedFlip Canopy.colorscheme</file>
+        <file>SeedFlip Carbon.colorscheme</file>
+        <file>SeedFlip Coral.colorscheme</file>
+        <file>SeedFlip Ember.colorscheme</file>
+        <file>SeedFlip Glacier.colorscheme</file>
+        <file>SeedFlip Inkwell.colorscheme</file>
+        <file>SeedFlip Ivory.colorscheme</file>
+        <file>SeedFlip Nightfall.colorscheme</file>
+        <file>SeedFlip Phosphor.colorscheme</file>
+        <file>SeedFlip Pulse.colorscheme</file>
+        <file>SeedFlip Ultraviolet.colorscheme</file>
+        <file>SeedFlip Voltage.colorscheme</file>
+        <file>SeedFlip Wavelength.colorscheme</file>
+        <file>Selenized Black.colorscheme</file>
+        <file>Selenized Dark.colorscheme</file>
+        <file>Selenized Light.colorscheme</file>
+        <file>Seoulbones Dark.colorscheme</file>
+        <file>Seoulbones Light.colorscheme</file>
+        <file>Sequoia Monochrome Dark.colorscheme</file>
+        <file>Sequoia Monochrome Light.colorscheme</file>
+        <file>Sequoia Moonlight Dark.colorscheme</file>
+        <file>Sequoia Moonlight Light.colorscheme</file>
+        <file>Sequoia Retro Dark.colorscheme</file>
+        <file>Sequoia Retro Light.colorscheme</file>
+        <file>Serendipity Midnight.colorscheme</file>
+        <file>Serendipity Morning.colorscheme</file>
+        <file>Serendipity Sunset.colorscheme</file>
+        <file>Seti.colorscheme</file>
+        <file>Shades Of Purple.colorscheme</file>
+        <file>Shaman.colorscheme</file>
+        <file>Shokunin.colorscheme</file>
+        <file>Sierra Gold.colorscheme</file>
+        <file>Signal Ghost.colorscheme</file>
+        <file>SilkCircuit Dawn.colorscheme</file>
+        <file>SilkCircuit Glow.colorscheme</file>
+        <file>SilkCircuit Neon.colorscheme</file>
+        <file>SilkCircuit Soft.colorscheme</file>
+        <file>SilkCircuit Vibrant.colorscheme</file>
+        <file>Slate.colorscheme</file>
+        <file>Sleepy Hollow.colorscheme</file>
+        <file>Smyck.colorscheme</file>
+        <file>Snazzy.colorscheme</file>
+        <file>Snazzy Soft.colorscheme</file>
+        <file>Soft Server.colorscheme</file>
+        <file>Solar Flare.colorscheme</file>
+        <file>Solarized Darcula.colorscheme</file>
+        <file>Solarized Dark Higher Contrast.colorscheme</file>
+        <file>Solarized Dark Patched.colorscheme</file>
+        <file>Solarized Osaka Night.colorscheme</file>
+        <file>Sonokai.colorscheme</file>
+        <file>Sonoran Dusk.colorscheme</file>
+        <file>Spacedust.colorscheme</file>
+        <file>Spacegray Bright.colorscheme</file>
+        <file>Spacegray.colorscheme</file>
+        <file>Spacegray Eighties.colorscheme</file>
+        <file>Spacegray Eighties Dull.colorscheme</file>
+        <file>Spiderman.colorscheme</file>
+        <file>Spring.colorscheme</file>
+        <file>Springfield Resident.colorscheme</file>
+        <file>Springfield Resident Hight Contrast.colorscheme</file>
+        <file>Square.colorscheme</file>
+        <file>Squintless.colorscheme</file>
+        <file>Squirrelsong Dark.colorscheme</file>
+        <file>Srcery.colorscheme</file>
+        <file>Starlight.colorscheme</file>
+        <file>Static Memory.colorscheme</file>
+        <file>Sublette.colorscheme</file>
+        <file>Subliminal.colorscheme</file>
+        <file>Sugarplum.colorscheme</file>
+        <file>Sumi Linen.colorscheme</file>
+        <file>Sumi Phosphor.colorscheme</file>
+        <file>Sun Bleached.colorscheme</file>
+        <file>Sundried.colorscheme</file>
+        <file>Sunset Drive.colorscheme</file>
+        <file>Symfonic.colorscheme</file>
+        <file>Syncopation.colorscheme</file>
+        <file>Synthwave Alpha.colorscheme</file>
+        <file>Synthwave.colorscheme</file>
+        <file>Synthwave Everything.colorscheme</file>
+        <file>Tailwind Dark.colorscheme</file>
+        <file>Tailwind Light.colorscheme</file>
+        <file>Tango Adapted.colorscheme</file>
+        <file>Tango Half Adapted.colorscheme</file>
+        <file>Tearout.colorscheme</file>
+        <file>Teerb.colorscheme</file>
+        <file>Terafox.colorscheme</file>
+        <file>Terminal Basic.colorscheme</file>
+        <file>Terminal Basic Dark.colorscheme</file>
+        <file>Terminal Green 1999.colorscheme</file>
+        <file>Thayer Bright.colorscheme</file>
+        <file>The Fog.colorscheme</file>
+        <file>The Hulk.colorscheme</file>
+        <file>Thermal Receipt.colorscheme</file>
+        <file>Thirteen.colorscheme</file>
+        <file>Tinacious Design Dark.colorscheme</file>
+        <file>Tinacious Design Light.colorscheme</file>
+        <file>Token Dark.colorscheme</file>
+        <file>Token Light.colorscheme</file>
+        <file>TokyoNight.colorscheme</file>
+        <file>TokyoNight Day.colorscheme</file>
+        <file>TokyoNight Moon.colorscheme</file>
+        <file>TokyoNight Night.colorscheme</file>
+        <file>TokyoNight Storm.colorscheme</file>
+        <file>Tomorrow.colorscheme</file>
+        <file>Tomorrow Night Blue.colorscheme</file>
+        <file>Tomorrow Night Bright.colorscheme</file>
+        <file>Tomorrow Night Burns.colorscheme</file>
+        <file>Tomorrow Night.colorscheme</file>
+        <file>Tomorrow Night Eighties.colorscheme</file>
+        <file>Toy Chest.colorscheme</file>
+        <file>traffic.colorscheme</file>
+        <file>Trapped in Amber.colorscheme</file>
+        <file>Treehouse.colorscheme</file>
+        <file>Trick or Treat.colorscheme</file>
+        <file>Turquoise Trail.colorscheme</file>
+        <file>Twilight.colorscheme</file>
+        <file>Ubuntu.colorscheme</file>
+        <file>Ultra Dark.colorscheme</file>
+        <file>Ultra Violent.colorscheme</file>
+        <file>Undead.colorscheme</file>
+        <file>Under The Sea.colorscheme</file>
+        <file>Unikitty.colorscheme</file>
+        <file>urban.colorscheme</file>
+        <file>Urple.colorscheme</file>
+        <file>Vacuum Tube.colorscheme</file>
+        <file>Vague.colorscheme</file>
+        <file>Vaporwave Sunset.colorscheme</file>
+        <file>Vaughn.colorscheme</file>
+        <file>Velvet Court.colorscheme</file>
+        <file>Vercel.colorscheme</file>
+        <file>Verdigris.colorscheme</file>
+        <file>Vesper.colorscheme</file>
+        <file>Vibrant Ink.colorscheme</file>
+        <file>Vimbones.colorscheme</file>
+        <file>Violet Dark.colorscheme</file>
+        <file>Violet Light.colorscheme</file>
+        <file>Violite.colorscheme</file>
+        <file>Warm Burnout Dark.colorscheme</file>
+        <file>Warm Burnout Light.colorscheme</file>
+        <file>Warm Neon.colorscheme</file>
+        <file>Wez.colorscheme</file>
+        <file>Whimsy.colorscheme</file>
+        <file>White Sands.colorscheme</file>
+        <file>Wild Cherry.colorscheme</file>
+        <file>Willow Grove.colorscheme</file>
+        <file>Wilmersdorf.colorscheme</file>
+        <file>Witches' Brew.colorscheme</file>
+        <file>Witching Hour.colorscheme</file>
+        <file>Wombat.colorscheme</file>
+        <file>Wryan.colorscheme</file>
+        <file>X Berlin.colorscheme</file>
+        <file>X Bogota.colorscheme</file>
+        <file>Xcode Dark.colorscheme</file>
+        <file>Xcode Dark hc.colorscheme</file>
+        <file>Xcode Light.colorscheme</file>
+        <file>Xcode Light hc.colorscheme</file>
+        <file>Xcode WWDC.colorscheme</file>
+        <file>X.colorscheme</file>
+        <file>X Helsinki.colorscheme</file>
+        <file>X Lahabana.colorscheme</file>
+        <file>X London.colorscheme</file>
+        <file>X Madrid.colorscheme</file>
+        <file>X Miami.colorscheme</file>
+        <file>X Oslo.colorscheme</file>
+        <file>X Paris.colorscheme</file>
+        <file>X Praha.colorscheme</file>
+        <file>X Tokio.colorscheme</file>
+        <file>Y2K Chrome.colorscheme</file>
+        <file>Zenbones.colorscheme</file>
+        <file>Zenbones Dark.colorscheme</file>
+        <file>Zenbones Light.colorscheme</file>
+        <file>Zenburn.colorscheme</file>
+        <file>Zenburned.colorscheme</file>
+        <file>Zenwritten Dark.colorscheme</file>
+        <file>Zenwritten Light.colorscheme</file>
+    </qresource>
+</RCC>
