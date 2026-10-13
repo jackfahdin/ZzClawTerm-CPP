@@ -198,11 +198,9 @@ ZzSshConfigPage::ZzSshConfigPage(QWidget *parent)
     auto *terminalForm = new QFormLayout(terminalPage);
     m_colorSchemeCombo = new QComboBox(terminalPage);
     m_colorSchemeCombo->setObjectName(QStringLiteral("colorSchemeCombo"));
-    // 首项「跟随全局」（itemData 空串，空串=跟随全局设置）；
-    // 配色暂为死字段（连接流程只用全局），置灰占位
+    // 首项「跟随全局」（itemData 空串，空串=跟随全局设置）
     m_colorSchemeCombo->addItem(QString(), QString());
     m_colorSchemeCombo->addItems(ZzAppSettings::availableColorSchemes());
-    m_colorSchemeCombo->setEnabled(false);
     terminalForm->addRow(new QLabel(terminalPage), m_colorSchemeCombo);
     m_stack->addWidget(terminalPage);
 
@@ -421,10 +419,6 @@ void ZzSshConfigPage::retranslateUi()
         0, tr("跟随全局（%1）").arg(appSettings.encoding()));
     m_colorSchemeCombo->setItemText(
         0, tr("跟随全局（%1）").arg(appSettings.colorScheme()));
-
-    // 配色仍为死字段（连接流程只用全局设置）：置灰占位并说明；编码已接通会话创建
-    m_colorSchemeCombo->setToolTip(
-        tr("暂未生效：连接流程暂不支持每会话覆盖，当前跟随全局设置"));
 
     m_keepAliveSpin->setSpecialValueText(tr("关闭"));
     m_keepAliveSpin->setSuffix(tr(" 秒"));

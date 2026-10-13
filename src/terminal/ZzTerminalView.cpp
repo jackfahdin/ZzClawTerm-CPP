@@ -228,7 +228,10 @@ void ZzTerminalView::applySettings(const ZzAppSettings &settings)
     // 空串跟随全局，全局变更经本函数生效
     applyEncoding(m_sessionEncoding.isEmpty() ? settings.encoding()
                                               : m_sessionEncoding);
-    m_term->setColorScheme(settings.colorScheme());
+    // 会话级配色非空时优先；空串跟随全局，全局变更经本函数生效
+    m_term->setColorScheme(m_sessionColorScheme.isEmpty()
+                               ? settings.colorScheme()
+                               : m_sessionColorScheme);
     // historyLines 运行时调整仍不生效（Core 构造期容量），保留读存。
     (void)settings.historyLines();
 }
@@ -238,6 +241,14 @@ void ZzTerminalView::setSessionEncoding(const QString &encoding)
     m_sessionEncoding = encoding;
     applyEncoding(encoding.isEmpty() ? ZzAppSettings::instance().encoding()
                                      : encoding);
+}
+
+void ZzTerminalView::setSessionColorScheme(const QString &name)
+{
+    m_sessionColorScheme = name;
+    m_term->setColorScheme(name.isEmpty()
+                               ? ZzAppSettings::instance().colorScheme()
+                               : name);
 }
 
 void ZzTerminalView::applyEncoding(const QString &name)

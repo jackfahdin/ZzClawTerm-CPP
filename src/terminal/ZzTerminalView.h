@@ -59,14 +59,17 @@ public:
     /** @brief 当前传输状态（未绑定视为 Disconnected）。 */
     [[nodiscard]] ZzTransportInterface::State transportState() const;
 
-    /** @brief 应用全局设置：字号、编码（会话级覆盖优先，空串跟随全局；
-     *        含收发转码器重建）、配色方案；
-     *        historyLines 读存暂不生效（Core 构造期容量）。 */
+    /** @brief 应用全局设置：字号、编码与配色方案（会话级覆盖优先，空串跟随全局；
+     *        编码含收发转码器重建）；historyLines 读存暂不生效（Core 构造期容量）。 */
     void applySettings(const ZzAppSettings &settings);
 
     /** @brief 设置会话级编码（空串=跟随全局设置，与 profile 空串口径一致），
      *        立即重建收发转码器；后续 applySettings 不覆盖非空会话级编码。 */
     void setSessionEncoding(const QString &encoding);
+
+    /** @brief 设置会话级配色（空串=跟随全局设置，与 profile 空串口径一致），
+     *        立即切换；后续 applySettings 不覆盖非空会话级配色。 */
+    void setSessionColorScheme(const QString &name);
 
     /** @brief 启用滚动历史桥：为该会话创建 ZzLogEngine 并接线（ZzTabManager 开会话时调用）。 */
     void enableScrollback(const QString &sessionId);
@@ -115,6 +118,7 @@ private:
     ZzTransportEndpoint m_lastEndpoint;  ///< 最近一次 open 参数（重连用）
     QString m_encoding;                  ///< 状态栏展示的编码名
     QString m_sessionEncoding;           ///< 会话级编码，空串=跟随全局（ZzTabManager 开会话时设置）
+    QString m_sessionColorScheme;        ///< 会话级配色，空串=跟随全局（ZzTabManager 开会话时设置）
     QStringDecoder m_decoder;            ///< 收方向：会话编码 → UTF-8（feed 前）
     QStringEncoder m_encoder;            ///< 发方向：UTF-8 → 会话编码（write 前）
     // 按名构造不命中的平台（macOS 官方包无 iconv/ICU 命中 GBK）兜底：

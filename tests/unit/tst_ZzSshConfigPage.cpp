@@ -156,16 +156,16 @@ private slots:
         QVERIFY(out.colorSchemeName.isEmpty());
     }
 
-    /** @brief 编码 combo 已接通会话创建（可用）；配色 combo 仍置灰占位。 */
-    void encodingEnabledColorSchemeDisabled()
+    /** @brief 编码与配色 combo 均已接通会话创建（可用，无死字段 tooltip）。 */
+    void encodingAndColorSchemeEnabled()
     {
         ZzSshConfigPage page;
         auto *encoding = page.findChild<QComboBox *>(QStringLiteral("encodingCombo"));
         auto *scheme = page.findChild<QComboBox *>(QStringLiteral("colorSchemeCombo"));
         QVERIFY(encoding && scheme);
         QVERIFY(encoding->isEnabled());
-        QVERIFY(!scheme->isEnabled());
-        QVERIFY(!scheme->toolTip().isEmpty());
+        QVERIFY(scheme->isEnabled());
+        QVERIFY(scheme->toolTip().isEmpty());
     }
 
     /** @brief setCredentialHints 按已存凭据切换占位提示，LanguageChange 后提示不丢。 */

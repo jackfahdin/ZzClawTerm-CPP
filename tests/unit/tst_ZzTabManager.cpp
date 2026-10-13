@@ -11,6 +11,7 @@
 #include "session/ZzSessionProfile.h"
 #include "settings/ZzAppSettings.h"
 #include "tab/ZzTabManager.h"
+#include "terminal/ZzCoreTerminalWidget.h"
 #include "terminal/ZzTerminalView.h"
 #include "transport/ZzLocalPtyTransport.h"
 #include "transport/ZzSshTransport.h"
@@ -98,6 +99,23 @@ private slots:
         tabs.openSession(follow);
         QCOMPARE(tabs.viewAt(1)->encoding(),
                  ZzAppSettings::instance().encoding());
+    }
+
+    /** @brief profile.colorSchemeName 接通到会话视图：非空覆盖全局，空串跟随全局。 */
+    void sessionColorSchemeFlowsToView()
+    {
+        ZzTabManager tabs;
+        ZzSessionProfile dark = makeProfile(QStringLiteral("暗色机"));
+        dark.colorSchemeName = QStringLiteral("Dracula");
+        tabs.openSession(dark);
+        QCOMPARE(tabs.viewAt(0)->termWidget()->colorSchemeName(),
+                 QStringLiteral("Dracula"));
+
+        ZzSessionProfile follow = makeProfile(QStringLiteral("跟随机"));
+        follow.colorSchemeName.clear(); // 空串 = 跟随全局设置
+        tabs.openSession(follow);
+        QCOMPARE(tabs.viewAt(1)->termWidget()->colorSchemeName(),
+                 ZzAppSettings::instance().colorScheme());
     }
 
     void closeTabDestroysView()

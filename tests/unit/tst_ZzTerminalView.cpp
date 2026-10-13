@@ -1,6 +1,7 @@
 #include <QtTest/QtTest>
 
 #include <QtCore/QStringConverter>
+#include <QtCore/QTemporaryDir>
 
 #include "ZzMockTransport.h"
 #include "settings/ZzAppSettings.h"
@@ -204,6 +205,29 @@ private slots:
         view.setSessionEncoding(QString()); // 空串 = 跟随全局
         QCOMPARE(view.encoding(), ZzAppSettings::instance().encoding());
         QFile::remove(path);
+    }
+
+    /**
+     * @brief 会话级配色覆盖全局值，且不被后续 applySettings 冲掉；
+     *        置回空串后跟随全局（ZzTabManager 开会话时按 profile.colorSchemeName 接通）。
+     */
+    void sessionColorSchemeOverridesGlobal()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        ZzAppSettings settings(dir.filePath(QStringLiteral("session-scheme.ini")));
+
+        ZzTerminalView view;
+        view.setSessionColorScheme(QStringLiteral("Dracula"));
+        QCOMPARE(view.termWidget()->colorSchemeName(), QStringLiteral("Dracula"));
+
+        settings.setColorScheme(QStringLiteral("Solarized Light"));
+        view.applySettings(settings); // 全局变更不覆盖会话级配色
+        QCOMPARE(view.termWidget()->colorSchemeName(), QStringLiteral("Dracula"));
+
+        view.setSessionColorScheme(QString()); // 空串 = 跟随全局
+        QCOMPARE(view.termWidget()->colorSchemeName(),
+                 ZzAppSettings::instance().colorScheme());
     }
 
     void applySettingsPropagatesColorScheme()
