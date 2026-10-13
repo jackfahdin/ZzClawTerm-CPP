@@ -141,6 +141,8 @@ ZzTerminalView *ZzTabManager::createPane(const ZzSessionProfile &profile,
     }
     view->setTransport(transport);
     view->applySettings(ZzAppSettings::instance());
+    // 会话级编码接通：空串=跟随全局（与 terminalType 同口径），非空覆盖全局值
+    view->setSessionEncoding(profile.encoding);
     return view;
 }
 

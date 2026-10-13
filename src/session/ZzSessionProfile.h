@@ -39,7 +39,7 @@ struct ZzSessionProfile {
     QUuid keyPassphraseCredentialId; ///< 私钥口令引用（authMethod == PrivateKey 且私钥有口令时有效；
                                     ///< 口令密文存于凭据后端，不落 profile；null 表示无口令）
     QString terminalType;           ///< 终端类型（TERM），空串表示跟随全局设置（ZzAppSettings::terminalType）
-    QString encoding = QStringLiteral("UTF-8");              ///< 字符编码
+    QString encoding;               ///< 字符编码，空串表示跟随全局设置（ZzAppSettings::encoding）
     QString colorSchemeName;        ///< 配色方案名，空串表示使用全局默认
     int keepAliveIntervalSeconds = 0; ///< keepalive 间隔（秒），0 表示禁用
     bool x11Forwarding = true;        ///< 是否启用 X11 转发（缺省 true 对齐 MobaXterm；旧 JSON 无此字段时兼容）

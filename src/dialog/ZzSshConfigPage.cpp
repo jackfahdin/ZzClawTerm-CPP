@@ -88,14 +88,13 @@ ZzSshConfigPage::ZzSshConfigPage(QWidget *parent)
         QStringLiteral("linux")});
     m_encodingCombo = new QComboBox(connectionPage);
     m_encodingCombo->setObjectName(QStringLiteral("encodingCombo"));
-    m_encodingCombo->setEditable(true); // 非列表内编码名也能回填（字段已置灰，仅保数据）
-    // 首项「跟随全局」（itemData 空串）；编码暂为死字段（连接流程只用全局），置灰占位
+    m_encodingCombo->setEditable(true); // 非列表内编码名也能回填
+    // 首项「跟随全局」（itemData 空串，文本由 retranslateUi 填）：空串=跟随全局设置
     m_encodingCombo->addItem(QString(), QString());
     m_encodingCombo->addItems({
         QStringLiteral("UTF-8"), QStringLiteral("GBK"),
         QStringLiteral("GB18030"), QStringLiteral("Big5"),
         QStringLiteral("ISO-8859-1")});
-    m_encodingCombo->setEnabled(false);
     m_keepAliveSpin = new QSpinBox(connectionPage);
     m_keepAliveSpin->setRange(0, 3600);
     m_keepAliveSpin->setSpecialValueText(QString()); // retranslateUi 设「关闭」
@@ -423,11 +422,9 @@ void ZzSshConfigPage::retranslateUi()
     m_colorSchemeCombo->setItemText(
         0, tr("跟随全局（%1）").arg(appSettings.colorScheme()));
 
-    // 编码/配色为死字段（连接流程只用全局设置）：置灰占位并说明
-    const QString deadFieldTip =
-        tr("暂未生效：连接流程暂不支持每会话覆盖，当前跟随全局设置");
-    m_encodingCombo->setToolTip(deadFieldTip);
-    m_colorSchemeCombo->setToolTip(deadFieldTip);
+    // 配色仍为死字段（连接流程只用全局设置）：置灰占位并说明；编码已接通会话创建
+    m_colorSchemeCombo->setToolTip(
+        tr("暂未生效：连接流程暂不支持每会话覆盖，当前跟随全局设置"));
 
     m_keepAliveSpin->setSpecialValueText(tr("关闭"));
     m_keepAliveSpin->setSuffix(tr(" 秒"));

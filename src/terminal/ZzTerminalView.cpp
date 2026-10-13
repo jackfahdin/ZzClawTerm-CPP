@@ -224,8 +224,26 @@ void ZzTerminalView::applySettings(const ZzAppSettings &settings)
 {
     m_term->setTerminalFontPointSize(settings.fontSize());
 
-    m_encoding = settings.encoding();
-    const QByteArray codecName = settings.encoding().toUtf8();
+    // 会话级编码非空时优先（ZzTabManager 开会话时由 profile 接通）；
+    // 空串跟随全局，全局变更经本函数生效
+    applyEncoding(m_sessionEncoding.isEmpty() ? settings.encoding()
+                                              : m_sessionEncoding);
+    m_term->setColorScheme(settings.colorScheme());
+    // historyLines 运行时调整仍不生效（Core 构造期容量），保留读存。
+    (void)settings.historyLines();
+}
+
+void ZzTerminalView::setSessionEncoding(const QString &encoding)
+{
+    m_sessionEncoding = encoding;
+    applyEncoding(encoding.isEmpty() ? ZzAppSettings::instance().encoding()
+                                     : encoding);
+}
+
+void ZzTerminalView::applyEncoding(const QString &name)
+{
+    m_encoding = name;
+    const QByteArray codecName = name.toUtf8();
     // 两级查找：① 按名直接构造（UTF 系/Latin1 由 QtCore 内建，GBK 等经
     // QtCore iconv 或 ICU 按名命中——encodingForName 只认内建枚举，看不到
     // 这些 codec，故不用它判有效）；② 按名不命中的平台（macOS 官方包无
@@ -245,16 +263,13 @@ void ZzTerminalView::applySettings(const ZzAppSettings &settings)
     } else {
         // 无效编码名（拼写错误等）回退 UTF-8 保底：保持默认态 decoder 会让
         // decode 静默返空串导致黑屏。
-        qWarning() << "ZzTerminalView: 无法识别的编码" << settings.encoding()
+        qWarning() << "ZzTerminalView: 无法识别的编码" << name
                    << "，收发转码回退 UTF-8";
         m_decoder = QStringDecoder(QStringConverter::Utf8);
         m_encoder = QStringEncoder(QStringConverter::Utf8);
         m_codecDecoder.reset();
         m_codecEncoder.reset();
     }
-    m_term->setColorScheme(settings.colorScheme());
-    // historyLines 运行时调整仍不生效（Core 构造期容量），保留读存。
-    (void)settings.historyLines();
 }
 
 void ZzTerminalView::enableScrollback(const QString &sessionId)

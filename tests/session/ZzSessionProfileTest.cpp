@@ -50,7 +50,7 @@ private slots:
         QVERIFY(profile.privateKeyPath.isEmpty());
         QVERIFY(profile.credentialId.isNull());
         QVERIFY(profile.terminalType.isEmpty()); // 空串 = 跟随全局设置
-        QCOMPARE(profile.encoding, QStringLiteral("UTF-8"));
+        QVERIFY(profile.encoding.isEmpty()); // 空串 = 跟随全局设置
         QVERIFY(profile.colorSchemeName.isEmpty());
         QCOMPARE(profile.keepAliveIntervalSeconds, 0);
     }

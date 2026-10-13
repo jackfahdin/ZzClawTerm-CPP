@@ -183,6 +183,29 @@ private slots:
         QCOMPARE(warmFiles.size(), 2);
     }
 
+    /**
+     * @brief 会话级编码覆盖全局值，且不被后续 applySettings 冲掉；
+     *        置回空串后跟随全局（ZzTabManager 开会话时按 profile.encoding 接通）。
+     */
+    void sessionEncodingOverridesGlobal()
+    {
+        const QString path = QDir(QDir::tempPath())
+            .filePath(QStringLiteral("zzclawterm-view-session-encoding.ini"));
+        QFile::remove(path);
+        ZzAppSettings settings(path); // 全局默认 UTF-8
+
+        ZzTerminalView view;
+        view.setSessionEncoding(QStringLiteral("GBK"));
+        QCOMPARE(view.encoding(), QStringLiteral("GBK"));
+
+        view.applySettings(settings); // 全局变更不覆盖会话级编码
+        QCOMPARE(view.encoding(), QStringLiteral("GBK"));
+
+        view.setSessionEncoding(QString()); // 空串 = 跟随全局
+        QCOMPARE(view.encoding(), ZzAppSettings::instance().encoding());
+        QFile::remove(path);
+    }
+
     void applySettingsPropagatesColorScheme()
     {
         const QString path = QDir(QDir::tempPath())

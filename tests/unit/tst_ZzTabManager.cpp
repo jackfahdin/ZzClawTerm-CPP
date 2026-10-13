@@ -9,6 +9,7 @@
 
 #include "ZzMockTransport.h"
 #include "session/ZzSessionProfile.h"
+#include "settings/ZzAppSettings.h"
 #include "tab/ZzTabManager.h"
 #include "terminal/ZzTerminalView.h"
 #include "transport/ZzLocalPtyTransport.h"
@@ -81,6 +82,22 @@ private slots:
         QTRY_COMPARE(view->transportState(), ZzTransportInterface::State::Connected);
         QVERIFY(tabs.tabsClosable());
         QVERIFY(tabs.isMovable()); // 拖拽排序
+    }
+
+    /** @brief profile.encoding 接通到会话视图：非空覆盖全局，空串跟随全局。 */
+    void sessionEncodingFlowsToView()
+    {
+        ZzTabManager tabs;
+        ZzSessionProfile gbk = makeProfile(QStringLiteral("编码机"));
+        gbk.encoding = QStringLiteral("GBK");
+        tabs.openSession(gbk);
+        QCOMPARE(tabs.viewAt(0)->encoding(), QStringLiteral("GBK"));
+
+        ZzSessionProfile follow = makeProfile(QStringLiteral("跟随机"));
+        follow.encoding.clear(); // 空串 = 跟随全局设置
+        tabs.openSession(follow);
+        QCOMPARE(tabs.viewAt(1)->encoding(),
+                 ZzAppSettings::instance().encoding());
     }
 
     void closeTabDestroysView()
