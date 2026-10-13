@@ -1,5 +1,6 @@
 #include <QtTest/QtTest>
 
+#include <QtCore/QRegularExpression>
 #include <QtCore/QStringConverter>
 #include <QtCore/QTemporaryDir>
 #include <QtWidgets/QScrollBar>
@@ -63,6 +64,63 @@ private slots:
 
         // 收：GBK 字节「中」（0xD6 0xD0）→ UTF-8 feed → 渲染为「中」
         transport->simulateData(QByteArray("\xD6\xD0\r\n", 4));
+        QCoreApplication::processEvents();
+        QVERIFY(view.termWidget()->visibleLineTextForTest(0)
+                    .startsWith(QStringLiteral("中")));
+    }
+
+    /**
+     * @brief GBK 发送方向字节级断言：CJK 输入经会话编码转码后
+     *        必须产出 GBK 字节序列（「中」= 0xD6 0xD0），而非 UTF-8 直通。
+     */
+    void gbkSendDirectionProducesGbkBytes()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        ZzAppSettings settings(dir.filePath(QStringLiteral("gbk-send.ini")));
+        settings.setEncoding(QStringLiteral("GBK"));
+
+        ZzTerminalView view;
+        view.applySettings(settings);
+        auto *transport = new ZzMockTransport(&view);
+        transport->echoEnabled = false;
+        view.setTransport(transport);
+        transport->open(ZzTransportEndpoint{});
+        QTRY_VERIFY(transport->state() == ZzTransportInterface::State::Connected);
+
+        // 键盘输入方向：UTF-8「中」→ GBK 0xD6 0xD0（ASCII 两编码同形，
+        // 无法区分编码器是否生效，必须用 CJK 断言）
+        emit view.termWidget()->sendData(QStringLiteral("中").toUtf8());
+        QCOMPARE(transport->writtenData, QByteArray("\xD6\xD0", 2));
+    }
+
+    /**
+     * @brief 回归：无效编码名（拼写错误等）回退 UTF-8，收发双向按 UTF-8 语义
+     *        工作。曾因保持默认态 decoder 静默返空串导致黑屏。
+     */
+    void invalidEncodingFallsBackToUtf8()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        ZzAppSettings settings(dir.filePath(QStringLiteral("bad-encoding.ini")));
+        settings.setEncoding(QStringLiteral("NO-SUCH-CODEC"));
+
+        QTest::ignoreMessage(QtWarningMsg,
+            QRegularExpression(QStringLiteral("无法识别的编码")));
+        ZzTerminalView view;
+        view.applySettings(settings);
+        auto *transport = new ZzMockTransport(&view);
+        transport->echoEnabled = false;
+        view.setTransport(transport);
+        transport->open(ZzTransportEndpoint{});
+        QTRY_VERIFY(transport->state() == ZzTransportInterface::State::Connected);
+
+        // 发：UTF-8 直通（「中」= E4 B8 AD）
+        emit view.termWidget()->sendData(QStringLiteral("中").toUtf8());
+        QCOMPARE(transport->writtenData, QStringLiteral("中").toUtf8());
+
+        // 收：UTF-8 字节正常渲染，不返空串（黑屏回归的直接探针）
+        transport->simulateData(QStringLiteral("中\r\n").toUtf8());
         QCoreApplication::processEvents();
         QVERIFY(view.termWidget()->visibleLineTextForTest(0)
                     .startsWith(QStringLiteral("中")));
