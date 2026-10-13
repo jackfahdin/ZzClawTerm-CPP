@@ -175,6 +175,52 @@ private slots:
         QCOMPARE(spy.count(), 0); // preedit 不进会话
     }
 
+    void imeCommitWithPreeditSameEventKeepsPreedit()
+    {
+        ZzCoreTerminalWidget widget;
+        QSignalSpy spy(&widget, &ZzCoreTerminalWidget::sendData);
+        // 同一事件同时携带 commit 与下一拍 preedit（连续上屏场景）
+        QInputMethodEvent ev(QStringLiteral("zh"),
+                             QList<QInputMethodEvent::Attribute>{});
+        ev.setCommitString(QStringLiteral("中"));
+        QApplication::sendEvent(&widget, &ev);
+        QVERIFY(spy.count() >= 1);
+        QByteArray all;
+        for (const auto &call : spy)
+            all += call.at(0).toByteArray();
+        QCOMPARE(all, QStringLiteral("中").toUtf8());                 // commit 进会话
+        QCOMPARE(widget.preeditTextForTest(), QStringLiteral("zh")); // preedit 不丢
+    }
+
+    void imeCommitClearsPreedit()
+    {
+        ZzCoreTerminalWidget widget;
+        QSignalSpy spy(&widget, &ZzCoreTerminalWidget::sendData);
+        QInputMethodEvent preedit(QStringLiteral("zhong"),
+                                  QList<QInputMethodEvent::Attribute>{});
+        QApplication::sendEvent(&widget, &preedit);
+        QCOMPARE(widget.preeditTextForTest(), QStringLiteral("zhong"));
+        // 纯 commit 事件（无 preedit）后 preedit 必须清空
+        QInputMethodEvent commit(QString(), QList<QInputMethodEvent::Attribute>{});
+        commit.setCommitString(QStringLiteral("中文"));
+        QApplication::sendEvent(&widget, &commit);
+        QVERIFY(spy.count() >= 1);
+        QCOMPARE(widget.preeditTextForTest(), QString());
+    }
+
+    void imePreeditTrackedInUnwrapMode()
+    {
+        ZzCoreTerminalWidget widget;
+        widget.recvData(QByteArray("abcdef\r\n"));
+        widget.setUnwrapMode(true);
+        QSignalSpy spy(&widget, &ZzCoreTerminalWidget::sendData);
+        QInputMethodEvent preedit(QStringLiteral("zhong"),
+                                  QList<QInputMethodEvent::Attribute>{});
+        QApplication::sendEvent(&widget, &preedit);
+        QCOMPARE(widget.preeditTextForTest(), QStringLiteral("zhong"));
+        QCOMPARE(spy.count(), 0);
+    }
+
     void contextMenuCopyEnabledOnlyWithSelection()
     {
         ZzCoreTerminalWidget widget;

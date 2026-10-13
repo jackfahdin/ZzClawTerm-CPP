@@ -338,6 +338,18 @@ void ZzCoreTerminalWidget::paintUnwrapped(QPainter &painter)
             const QRect cursorRect(col * cellWidth_, (int)row * cellHeight_,
                                    cellWidth_, cellHeight_);
             painter.fillRect(cursorRect, resolveCellColor(ZzColor::Default(), true));
+            // IME preedit：与 paintWrapped 同样式（下划线），叠加于光标格起。
+            if (!preedit_.isEmpty()) {
+                QFont f = painter.font();
+                f.setUnderline(true); // preedit 惯例样式：下划线
+                painter.setFont(f);
+                painter.setPen(scheme_.foreground);
+                painter.setClipRect(rect());
+                painter.drawText(col * cellWidth_,
+                                 (int)row * cellHeight_ + cellAscent_,
+                                 preedit_);
+                painter.setClipping(false);
+            }
         }
     }
 }
@@ -502,12 +514,11 @@ void ZzCoreTerminalWidget::keyPressEvent(QKeyEvent *event)
 
 void ZzCoreTerminalWidget::inputMethodEvent(QInputMethodEvent *event)
 {
-    if (!event->commitString().isEmpty()) {
+    if (!event->commitString().isEmpty())
         term_.sendText(event->commitString().toUtf8().toStdString());
-        preedit_.clear();
-    } else {
-        preedit_ = event->preeditString();
-    }
+    // commit 与 preedit 可同事件携带（连续上屏时 preedit 已是下一拍），
+    // 一律以事件值为准，空串即清除。
+    preedit_ = event->preeditString();
     update();
     event->accept();
 }
