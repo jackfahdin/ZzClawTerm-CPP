@@ -221,7 +221,7 @@ private slots:
         view.setSessionColorScheme(QStringLiteral("Dracula"));
         QCOMPARE(view.termWidget()->colorSchemeName(), QStringLiteral("Dracula"));
 
-        settings.setColorScheme(QStringLiteral("Solarized Light"));
+        settings.setColorScheme(QStringLiteral("iTerm2 Solarized Light"));
         view.applySettings(settings); // 全局变更不覆盖会话级配色
         QCOMPARE(view.termWidget()->colorSchemeName(), QStringLiteral("Dracula"));
 
