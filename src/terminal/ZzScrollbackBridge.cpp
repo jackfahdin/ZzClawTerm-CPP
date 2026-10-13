@@ -127,13 +127,17 @@ void ZzScrollbackBridge::injectOlderBlock(int maxLines)
         for (const char32_t cp : text.toUcs4()) { // UCS-4 迭代：BMP 外按整码位
             if (col >= cols)
                 break; // 读回行超宽截断（纯文本口径，丢样式为既有口径）
-            ZzCell cell;
-            cell.setCodePoint(cp);
             // 宽度取引擎同一张 EAW 表（zzCellWidthOf），与渲染口径一致
             const bool wide = zzCellWidthOf(cp) == 2;
+            if (wide && col + 2 > cols)
+                break; // 宽字符落行末边界无续格空间：丢弃——悬挂 WideLead
+                       // 会在 reflow 时被当折行链首（flushRow(true)），
+                       // 污染逻辑行结构；Core putChar 同场景换行留空
+            ZzCell cell;
+            cell.setCodePoint(cp);
             cell.setWidth(wide ? ZzCellWidth::WideLead : ZzCellWidth::Narrow);
             line.setCell(col++, cell);
-            if (wide && col < cols) { // 宽字符占两格，续格占位
+            if (wide) { // 宽字符占两格，续格占位（边界已在上方排除）
                 ZzCell cont;
                 cont.setWidth(ZzCellWidth::WideContinuation);
                 line.setCell(col++, cont);

@@ -440,6 +440,59 @@ private slots:
             QCOMPARE(all.count(QStringLiteral("line-%1").arg(i)), 1);
     }
 
+    /**
+     * @brief 回归：读回行宽字符恰落行末边界时丢弃（不注入悬挂 WideLead）。
+     *        10 列：「123456789中」宽字符起于末列 → 截断为「123456789」且
+     *        末列非 WideLead；悬挂会在 reflow 时被当折行链首污染逻辑行结构。
+     *
+     * 与简报字面量的出入（实测核实）：「123456789中」经 Core 喂入时 putChar
+     * 在行末换行留空（ZzNativeBackend.cpp:418-432），落盘为「123456789」与
+     * 「中」两条物理行——引擎里不存在宽字符居末列的行，字面量用例恒绿
+     * （vacuous）。悬挂 WideLead 只能由注入产生，故改为直接向引擎种子两行
+     * （最旧端）：对照行「12345678中」恰好占满 8-9 列（配对完整须保留），
+     * 边界行「123456789中」宽字符起于末列（须截断）。断言结构不变：
+     * 末列 width 非 WideLead + 文本截断正确。
+     */
+    void injectDropsWideCharAtLineEndBoundary()
+    {
+        ZzCoreTerminalWidget term;
+        term.terminal().resize(10, 3);
+        ZzLogEngine::Config config;
+        config.hotCapacity = 20000; // 纯内存模式热层须装下全部落盘行
+        ZzLogEngine engine(config);
+        QVERIFY(engine.open());
+        // 种子行（引擎最旧端）：对照行在前，边界行紧随其后
+        engine.appendLine({QStringLiteral("12345678中"), QByteArray()});
+        engine.appendLine({QStringLiteral("123456789中"), QByteArray()});
+        ZzScrollbackBridge bridge(&term, &engine);
+
+        // 填容量制造归还额度（沿用 scrollTopInjectsOlderLines 范式）
+        for (int block = 0; block < 101; ++block) {
+            QByteArray chunk;
+            for (int i = 0; i < 100; ++i)
+                chunk += QStringLiteral("L%1\r\n").arg(block * 100 + i).toUtf8();
+            term.recvData(chunk);
+        }
+        const auto &hv = term.terminal().historyView();
+        QVERIFY(hv.droppedLineCount() > 0);
+
+        // 逐块回注直到引擎最旧的种子行浮到历史行 0/1
+        while (hv.droppedLineCount() > 0)
+            bridge.injectOlderBlock(200);
+
+        // 对照行：「12345678中」恰好占满 8-9 两列，配对完整不截断
+        const ZzLineView pairLine = hv.lineAt(0);
+        QCOMPARE(pairLine.cellAt(8).width, ZzCellWidth::WideLead);
+        QCOMPARE(pairLine.cellAt(9).width, ZzCellWidth::WideContinuation);
+        QCOMPARE(historyLineText(hv, 0), QStringLiteral("12345678中"));
+
+        // 边界行：宽字符起于末列无续格空间 → 整字丢弃
+        //（末列保持从未写入的 Empty 默认值；回归契约 = 不得是悬挂 WideLead）
+        const ZzLineView line1 = hv.lineAt(1);
+        QVERIFY(line1.cellAt(9).width != ZzCellWidth::WideLead);
+        QCOMPARE(historyLineText(hv, 1), QStringLiteral("123456789"));
+    }
+
 private:
     /** @brief 历史第 idx 行纯文本（去尾部填充空格）。 */
     static QString historyLineText(const ZzHistoryView &hv, std::size_t idx)
