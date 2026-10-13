@@ -33,22 +33,7 @@ ZzScrollbackBridge::ZzScrollbackBridge(ZzCoreTerminalWidget *term,
             m_seenLineNo = newest;
         }
         m_lastGeneration = gen; // 代计数随 feed 常规保鲜（reflow 回锚在 gridResized）
-        while (m_seenLineNo < newest) {
-            const std::size_t idx = (std::size_t)(m_seenLineNo - dropped);
-            if (idx >= count) // dropped 跳变超过未同步段：跳过缺口
-                break;
-            const ZzLineView line = hv.lineAt(idx);
-            QString text;
-            const int n = line.cellCount();
-            for (int c = 0; c < n; ++c)
-                text += QString::fromStdString(line.cellAt(c).text);
-            while (text.endsWith(QLatin1Char(' ')))
-                text.chop(1);
-            m_engine->appendLine({text, QByteArray()});
-            ++m_seenLineNo;
-        }
-        if (m_seenLineNo < dropped) // 缺口跳齐
-            m_seenLineNo = dropped;
+        appendScrolloutsUpTo(dropped, count, newest);
     });
     // reflow 对账复位（规格 §4.4，任务 5 审查修复）：resize 时 Core 同步完成
     // reflow 后才发射 gridResized（ZzCoreTerminalWidget::resizeEvent 先
@@ -77,6 +62,29 @@ ZzScrollbackBridge::ZzScrollbackBridge(ZzCoreTerminalWidget *term,
     // 降级路径（规格 §八）：引擎 I/O 失败 → 状态栏提示，不打断终端
     connect(m_engine, &ZzLogEngine::degradedToMemoryOnly, this,
             [this](const QString &reason) { emit degraded(reason); });
+}
+
+void ZzScrollbackBridge::appendScrolloutsUpTo(std::uint64_t dropped,
+                                              std::uint64_t count,
+                                              std::uint64_t newest)
+{
+    const auto &hv = m_term->terminal().historyView();
+    while (m_seenLineNo < newest) {
+        const std::size_t idx = (std::size_t)(m_seenLineNo - dropped);
+        if (idx >= count) // dropped 跳变超过未同步段：跳过缺口
+            break;
+        const ZzLineView line = hv.lineAt(idx);
+        QString text;
+        const int n = line.cellCount();
+        for (int c = 0; c < n; ++c)
+            text += QString::fromStdString(line.cellAt(c).text);
+        while (text.endsWith(QLatin1Char(' ')))
+            text.chop(1);
+        m_engine->appendLine({text, QByteArray()});
+        ++m_seenLineNo;
+    }
+    if (m_seenLineNo < dropped) // 缺口跳齐
+        m_seenLineNo = dropped;
 }
 
 QStringList ZzScrollbackBridge::readOlderLines(qint64 beforeLine,

@@ -58,6 +58,13 @@ signals:
     void degraded(const QString &reason);
 
 private:
+    /**
+     * @brief 追加游标 m_seenLineNo 到 newest 之间的滚出定稿行（含 dropped
+     *        跳变缺口跳齐）；contentFed/gridResized 共用。
+     */
+    void appendScrolloutsUpTo(std::uint64_t dropped, std::uint64_t count,
+                              std::uint64_t newest);
+
     ZzCoreTerminalWidget *m_term;
     ZzLogEngine *m_engine;
     std::uint64_t m_seenLineNo = 0; ///< 追加对账游标：已落盘的绝对行号（含 dropped 偏移）
