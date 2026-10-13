@@ -58,10 +58,15 @@ private slots:
         endpoint.shellProgram = platformShell();
         endpoint.cols = 80;
         endpoint.rows = 24;
+        // CI macOS flake 定位桩（M18 遗留 300s 卡死）：fork 子进程 execvp 非
+        // async-signal-safe 疑似死锁时，最后一条 CP 即卡点前位置
+        qWarning() << "CP1: before open";
         transport.open(endpoint);
+        qWarning() << "CP2: open returned";
 
         QTRY_VERIFY_WITH_TIMEOUT(
             transport.state() == ZzTransportInterface::State::Connected, 5000);
+        qWarning() << "CP3: connected";
         QVERIFY(stateSpy.count() >= 2); // Disconnected→Connecting→Connected
 
         // 写命令。注意断言要区分 PTY 输入回显与命令真实输出：回显只出现 1 次
@@ -71,10 +76,13 @@ private slots:
         connect(&transport, &ZzTransportInterface::dataReceived,
                 this, [&received](const QByteArray &data) { received += data; });
         transport.write(QByteArrayLiteral("echo zz-pty-ok") + lineEnding());
+        qWarning() << "CP4: write returned";
         QTRY_VERIFY_WITH_TIMEOUT(received.count("zz-pty-ok") >= 2, 5000);
+        qWarning() << "CP5: echo received";
 
         transport.resize(100, 40);
         transport.close();
+        qWarning() << "CP6: close returned";
         QCOMPARE(transport.state(), ZzTransportInterface::State::Disconnected);
     }
 
@@ -88,7 +96,9 @@ private slots:
         ZzTransportEndpoint endpoint;
         endpoint.localShell = true;
         endpoint.shellProgram = platformShell();
+        qWarning() << "CP1: before open";
         transport.open(endpoint);
+        qWarning() << "CP2: open returned";
         QTRY_VERIFY_WITH_TIMEOUT(
             transport.state() == ZzTransportInterface::State::Connected, 5000);
 
@@ -114,7 +124,9 @@ private slots:
         QByteArray received;
         connect(&transport, &ZzTransportInterface::dataReceived,
                 this, [&received](const QByteArray &data) { received += data; });
+        qWarning() << "CP1: before open";
         transport.open(endpoint);
+        qWarning() << "CP2: open returned";
         QTRY_VERIFY_WITH_TIMEOUT(
             transport.state() == ZzTransportInterface::State::Connected, 5000);
 #if defined(Q_OS_WIN)
