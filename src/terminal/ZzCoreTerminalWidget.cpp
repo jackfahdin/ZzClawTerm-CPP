@@ -665,8 +665,14 @@ QString ZzCoreTerminalWidget::visibleLineTextForTest(int row) const
 
 void ZzCoreTerminalWidget::wheelEvent(QWheelEvent *event)
 {
+    // hi-res 滚轮（触控板/精密滚轮）单事件 delta 常不足一档 120：
+    // 累计余数、凑满成档，整除截断不再吞掉小 delta。缩放/alt/普通
+    // 三分支共用一个累加器（切换修饰键不清零，与 Konsole 同口径）。
+    wheelRemainder_ += event->angleDelta().y();
+    const int steps = wheelRemainder_ / 120;
+    wheelRemainder_ -= steps * 120;
+
     if (event->modifiers() & Qt::ControlModifier) {
-        const int steps = event->angleDelta().y() / 120;
         if (steps != 0) {
             // Ctrl+滚轮缩放：6-72pt 钳制；设置页改动经 applySettings 重置缩放
             const int next = qBound(6, font().pointSize() + steps, 72);
@@ -679,7 +685,6 @@ void ZzCoreTerminalWidget::wheelEvent(QWheelEvent *event)
     if (term_.isAlternateScreen()) {
         // Alternate 无历史：滚轮转方向键发给会话（vim/less 翻行），每档 3 行。
         // Z3 鼠标上报落地后此处需加「上报开启时不转」分支（登记，不在本任务）。
-        const int steps = event->angleDelta().y() / 120;
         if (steps != 0) {
             ZzKeyEvent keyEvent;
             keyEvent.action    = ZzKeyEvent::Action::Press;
@@ -694,7 +699,6 @@ void ZzCoreTerminalWidget::wheelEvent(QWheelEvent *event)
         event->ignore();
         return;
     }
-    const int steps = event->angleDelta().y() / 120;
     if (steps != 0) {
         // offset 语义为离底行数：上滚（steps > 0）增大 offset 进入历史，每格 3 行。
         if (steps > 0 && maxScrollOffset() > 0 && scrollOffset_ >= maxScrollOffset()) {

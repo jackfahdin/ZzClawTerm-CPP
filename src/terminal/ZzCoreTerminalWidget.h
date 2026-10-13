@@ -168,6 +168,7 @@ private:
     bool unwrapMode_ = false;
     int hScrollOffset_ = 0;
     int scrollOffset_ = 0;
+    int wheelRemainder_ = 0;           ///< hi-res 滚轮 delta 余数（凑满 120 成一档）
     bool selecting_ = false;
     ZzLogicalPos selAnchor_{};
     QString preedit_;                 ///< IME 组合中串（绘制于光标处，不进会话）

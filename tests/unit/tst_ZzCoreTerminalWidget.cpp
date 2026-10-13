@@ -347,6 +347,27 @@ private slots:
         QApplication::sendEvent(&widget, &e);
         QVERIFY(e.isAccepted());
     }
+
+    void hiResWheelAccumulatesRemainder()
+    {
+        // hi-res 小 delta 累余数：两次 +60（各不足一档）须合成一档上滚 3 行；
+        // 修复前 60/120==0 被整除截断逐次吞掉。
+        ZzCoreTerminalWidget widget;
+        widget.show(); // 隐藏 widget 的 resize() 不投递 QResizeEvent
+        for (int i = 0; i < 60; ++i)
+            widget.recvData(QByteArray("line\r\n"));
+        QVERIFY(widget.maxScrollOffset() > 0);
+        const auto wheelUp60 = [](QWidget *w) {
+            QWheelEvent e(QPointF(5, 5), QPointF(5, 5), QPoint(0, 0),
+                          QPoint(0, 60), Qt::NoButton, Qt::NoModifier,
+                          Qt::NoScrollPhase, false);
+            QApplication::sendEvent(w, &e);
+        };
+        wheelUp60(&widget);
+        QCOMPARE(widget.scrollOffset(), 0); // 不足一档暂不滚
+        wheelUp60(&widget);
+        QCOMPARE(widget.scrollOffset(), 3); // 凑满一档：每档 3 行
+    }
 };
 
 QTEST_MAIN(tst_ZzCoreTerminalWidget)
