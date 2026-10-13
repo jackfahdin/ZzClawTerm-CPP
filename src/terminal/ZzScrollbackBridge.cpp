@@ -3,6 +3,8 @@
 #include <ZzTerm/Line.h>
 #include <ZzTerm/UnicodeWidth.h>
 
+#include <algorithm>
+
 #include "log/ZzLogEngine.h"
 #include "log/ZzLogLine.h"
 #include "terminal/ZzCoreTerminalWidget.h"
@@ -43,14 +45,16 @@ ZzScrollbackBridge::ZzScrollbackBridge(ZzCoreTerminalWidget *term,
         m_lastGeneration = gen; // 代计数随 feed 常规保鲜（reflow 回锚在 gridResized）
         appendScrolloutsUpTo(dropped, count, newest);
     });
-    // reflow 对账复位（规格 §4.4，任务 5 审查修复）：resize 时 Core 同步完成
-    // reflow 后才发射 gridResized（ZzCoreTerminalWidget::resizeEvent 先
-    // term_.resize 后发射），此刻历史仅含重组前行（皆已落盘），游标回锚到
-    // 新 newest 是精确复位——早于一切 reflow 后 feed，同帧突发输出的新行
-    // 不会被吞；行数增/减不做方向判断（皆为行身份重建）。回锚取 buffer
-    // 无关口径 primaryLineCount()：Alternate 期间 lineCount() 契约归零，
-    // 但列变 reflow 照样重组 Primary 历史，用可见口径会把游标锚到
-    // dropped+0，回主屏后整段历史被当新行重复落盘（复审修复 2）。
+    // reflow 对账复位（规格 §4.4，任务 5 审查修复 + 任务 10 迁移行补落盘）：
+    // resize 时 Core 同步完成 reflow 后才发射 gridResized
+    //（ZzCoreTerminalWidget::resizeEvent 先 term_.resize 后发射），游标回锚
+    // 早于一切 reflow 后 feed，同帧突发输出的新行不会被吞；行数增/减不做
+    // 方向判断（皆为行身份重建）。回锚取 buffer 无关口径 primaryLineCount()：
+    // Alternate 期间 lineCount() 契约归零，但列变 reflow 照样重组 Primary
+    // 历史，用可见口径会把游标锚到 dropped+0，回主屏后整段历史被当新行
+    // 重复落盘（复审修复 2）。缩列 reflow 会把屏上未落盘行压入历史尾部
+    //（屏→史迁移，≤一屏），这段迁移行必须先落盘再回锚（Core
+    // resizeScreenScrollout 计数），否则被锚过永久丢失（任务 10）。
     // 纯行变不触发复位：M15 压历史/回抽只移动行不重建身份（压历史的屏上行
     // 尚未落盘，须经既有差分正常追加），由列比较排除；代计数漂移一律在
     // 此吸收，否则 contentFed 的 ED 3 兜底会在纯行变后的下个 feed 误触发。
@@ -58,9 +62,18 @@ ZzScrollbackBridge::ZzScrollbackBridge(ZzCoreTerminalWidget *term,
             [this](int cols, int) {
                 const auto &hv = m_term->terminal().historyView();
                 const std::uint64_t gen = hv.generation();
-                if (cols != m_lastCols && gen != m_lastGeneration)
-                    m_seenLineNo =
-                        hv.droppedLineCount() + hv.primaryLineCount();
+                if (cols != m_lastCols && gen != m_lastGeneration) {
+                    const std::uint64_t dropped = hv.droppedLineCount();
+                    const std::uint64_t count = hv.primaryLineCount(); // buffer 无关口径
+                    const std::uint64_t newest = dropped + count;
+                    // 屏→史迁移行（reflow 溢出/缩行压历史，≤一屏）先落盘再回锚，
+                    // 否则这段未落盘行被锚过永久丢失；native lineAt 无 alt 守卫，
+                    // alt 期间亦可按 primaryLineCount 读 Primary 历史
+                    const std::uint64_t inflow = std::min<std::uint64_t>(
+                        m_term->terminal().resizeScreenScrollout(), newest);
+                    m_seenLineNo = newest - inflow;
+                    appendScrolloutsUpTo(dropped, count, newest);
+                }
                 m_lastGeneration = gen;
                 m_lastCols = cols;
             });

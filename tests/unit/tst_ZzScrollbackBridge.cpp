@@ -552,6 +552,52 @@ private slots:
                               QStringLiteral("q5"), QStringLiteral("q6")}));
     }
 
+    /**
+     * @brief Z3 日志完整性 a：缩列 reflow 把屏上未落盘行压入历史尾部，
+     *        gridResized 回锚前必须先落盘这段迁移行（修复前被锚过永久丢失）。
+     */
+    void narrowReflowLogsMigratedScreenLines()
+    {
+        ZzCoreTerminalWidget term;
+        term.show();
+        const int cw = term.cellWidthForTest();
+        const int ch = term.cellHeightForTest();
+        term.resize(40 * cw, 6 * ch);
+        ZzLogEngine engine(ZzLogEngine::Config{});
+        QVERIFY(engine.open());
+        ZzScrollbackBridge bridge(&term, &engine);
+
+        // 8 条 30 字符行进 6 行屏：历史 3（segment-0..2 落盘），
+        // 屏 [segment-3..7, 空光标行]（与 narrowReflowDoesNotDuplicateLog 同构造）
+        for (int i = 0; i < 8; ++i)
+            term.recvData(
+                QStringLiteral("segment-%1-abcdefghij0123456789\r\n").arg(i).toUtf8());
+        QCOMPARE(engine.totalLines(), 3ULL);
+
+        // 缩列 40 → 24：屏上 5 条 30 字符行各折 2 物理行 + 空行 = 11 > 6，
+        // 溢出 5 行压入历史尾部（历史 3→11，其中尾部 5 行是屏上迁移行）
+        term.resize(24 * cw, 6 * ch);
+        QCOMPARE(term.terminal().historyView().lineCount(), std::size_t(11));
+
+        // 修复核心断言：resize 当场（无后续 feed）迁移行已落盘——
+        // 3 条旧历史 + 5 条迁移行（折叠新形态，物理行口径）
+        QCOMPARE(engine.totalLines(), 8ULL);
+        QCOMPARE(logTexts(engine.getLines(3, 5)),
+                 QStringList({QStringLiteral("segment-3-abcdefghij0123"),
+                              QStringLiteral("456789"),
+                              QStringLiteral("segment-4-abcdefghij0123"),
+                              QStringLiteral("456789"),
+                              QStringLiteral("segment-5-abcdefghij0123")}));
+
+        // 落盘后游标已回锚：后续 feed 只追加真实 scrollout，迁移行不重复
+        const quint64 engineBefore = engine.totalLines();
+        term.recvData(QByteArray("n1\r\nn2\r\nn3\r\n"));
+        const quint64 scrolled =
+            quint64(term.terminal().historyView().lineCount()) - 11;
+        QVERIFY(scrolled > 0);
+        QCOMPARE(engine.totalLines(), engineBefore + scrolled);
+    }
+
 private:
     /** @brief 历史第 idx 行纯文本（去尾部填充空格）。 */
     static QString historyLineText(const ZzHistoryView &hv, std::size_t idx)
