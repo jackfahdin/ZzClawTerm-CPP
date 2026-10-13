@@ -7,6 +7,7 @@
 #include <QtCore/QEvent>
 #include <QtCore/QStandardPaths>
 #include <QtCore/QStringConverter>
+#include <QtCore5Compat/QTextCodec>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
@@ -91,7 +92,12 @@ ZzTerminalView::ZzTerminalView(QWidget *parent)
     connect(m_term, &ZzCoreTerminalWidget::sendData, this,
             [this](const QByteArray &data) {
                 if (m_transport) {
-                    m_transport->write(m_encoder.encode(QString::fromUtf8(data)));
+                    const QString text = QString::fromUtf8(data);
+                    m_transport->write(
+                        m_codecEncoder
+                            ? m_codecEncoder->fromUnicode(text.constData(),
+                                                          int(text.size()))
+                            : m_encoder.encode(text));
                 }
             });
     // 终端尺寸 → 传输（尾随去抖 150ms：拖拽期间只记最终尺寸，停手后一次送达，
@@ -111,6 +117,8 @@ ZzTerminalView::ZzTerminalView(QWidget *parent)
     applySettings(ZzAppSettings::instance());
 }
 
+ZzTerminalView::~ZzTerminalView() = default;
+
 void ZzTerminalView::setTransport(ZzTransportInterface *transport)
 {
     if (m_transport) {
@@ -123,7 +131,11 @@ void ZzTerminalView::setTransport(ZzTransportInterface *transport)
     // 传输 → 终端（远端输出方向，经转码层：会话编码 → UTF-8）
     connect(m_transport, &ZzTransportInterface::dataReceived, this,
             [this](const QByteArray &data) {
-                const QString text = m_decoder.decode(data);
+                const QString text =
+                    m_codecDecoder
+                        ? m_codecDecoder->toUnicode(data.constData(),
+                                                    int(data.size()))
+                        : m_decoder.decode(data);
                 m_term->recvData(text.toUtf8());
             });
     connect(m_transport, &ZzTransportInterface::stateChanged, this,
@@ -214,14 +226,22 @@ void ZzTerminalView::applySettings(const ZzAppSettings &settings)
 
     m_encoding = settings.encoding();
     const QByteArray codecName = settings.encoding().toUtf8();
-    // 按编码名直接构造：UTF 系/Latin1 由 QtCore 内建，GBK 等东亚编码经
-    // QtCore iconv（Unix）或 Qt5Compat codec（Windows 等无 iconv 平台）按名
-    // 命中。encodingForName 只认内建枚举，看不到这些 codec，故不用它判有效。
+    // 两级查找：① 按名直接构造（UTF 系/Latin1 由 QtCore 内建，GBK 等经
+    // QtCore iconv 或 ICU 按名命中——encodingForName 只认内建枚举，看不到
+    // 这些 codec，故不用它判有效）；② 按名不命中的平台（macOS 官方包无
+    // iconv/ICU，实测 GBK 落空回退 UTF-8）用 Core5Compat 自带 codec 兜底，
+    // 三平台口径统一。
     QStringDecoder decoder(codecName.constData());
     QStringEncoder encoder(codecName.constData());
     if (decoder.isValid() && encoder.isValid()) {
         m_decoder = std::move(decoder);
         m_encoder = std::move(encoder);
+        m_codecDecoder.reset();
+        m_codecEncoder.reset();
+    } else if (QTextCodec *codec = QTextCodec::codecForName(codecName)) {
+        // 有状态转码器：多字节序列可跨 TCP 分片，与 QStringDecoder 同语义
+        m_codecDecoder.reset(codec->makeDecoder());
+        m_codecEncoder.reset(codec->makeEncoder());
     } else {
         // 无效编码名（拼写错误等）回退 UTF-8 保底：保持默认态 decoder 会让
         // decode 静默返空串导致黑屏。
@@ -229,6 +249,8 @@ void ZzTerminalView::applySettings(const ZzAppSettings &settings)
                    << "，收发转码回退 UTF-8";
         m_decoder = QStringDecoder(QStringConverter::Utf8);
         m_encoder = QStringEncoder(QStringConverter::Utf8);
+        m_codecDecoder.reset();
+        m_codecEncoder.reset();
     }
     m_term->setColorScheme(settings.colorScheme());
     // historyLines 运行时调整仍不生效（Core 构造期容量），保留读存。

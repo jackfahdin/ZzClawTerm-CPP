@@ -3,6 +3,8 @@
 #include <QtCore/QStringConverter>
 #include <QtWidgets/QWidget>
 
+#include <memory>
+
 #include "ZzResizeDebouncer.h"
 #include "transport/ZzTransportEndpoint.h"
 #include "transport/ZzTransportInterface.h"
@@ -10,6 +12,8 @@
 class QLabel;
 class QPushButton;
 class QScrollBar;
+class QTextDecoder;
+class QTextEncoder;
 class ZzAppSettings;
 class ZzCoreTerminalWidget;
 class ZzScrollbackBridge;
@@ -29,6 +33,7 @@ class ZzTerminalView : public QWidget
     Q_OBJECT
 public:
     explicit ZzTerminalView(QWidget *parent = nullptr);
+    ~ZzTerminalView() override; // 出线定义：unique_ptr 持有前向声明的 QTextCodec 转码器
 
     /**
      * @brief 绑定传输并接线（可重复调用，用于断线重连换新实例）。
@@ -103,6 +108,10 @@ private:
     QString m_encoding;                  ///< 状态栏展示的编码名
     QStringDecoder m_decoder;            ///< 收方向：会话编码 → UTF-8（feed 前）
     QStringEncoder m_encoder;            ///< 发方向：UTF-8 → 会话编码（write 前）
+    // 按名构造不命中的平台（macOS 官方包无 iconv/ICU 命中 GBK）兜底：
+    // Core5Compat 自带 codec 的有状态转码器；非空时优先于 m_decoder/m_encoder
+    std::unique_ptr<QTextDecoder> m_codecDecoder; ///< 收方向兜底（Core5Compat）
+    std::unique_ptr<QTextEncoder> m_codecEncoder; ///< 发方向兜底（Core5Compat）
     ZzScrollbackBridge *m_scrollbackBridge = nullptr; ///< 滚动历史桥（可空，以本视图为父）
     QWidget *m_errorBanner = nullptr;  ///< 标签内错误提示条（默认隐藏）
     QLabel *m_errorLabel = nullptr;
