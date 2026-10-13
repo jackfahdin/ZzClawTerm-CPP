@@ -860,4 +860,5 @@ void ZzCoreTerminalWidget::contextMenuEvent(QContextMenuEvent *event)
         // 本地清屏（ED3+ED2+Home）：shell 不感知，与 fork 时代 Clear 同口径
         recvData(QByteArray("\x1b[3J\x1b[2J\x1b[H"));
     }
+    event->accept(); // 菜单已处置（含取消）：阻断向父控件传播
 }

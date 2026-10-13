@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QInputMethodEvent>
+#include <QTimer>
 #include <QWheelEvent>
 
 #include <ZzTerm/UnwrapView.h> // lineCount() 需完整类型（Terminal.h 仅前向声明）
@@ -330,6 +331,21 @@ private slots:
         widget.show();                       // 重新可见必须补重算
         const int expectCols = widget.size().width() / widget.cellWidthForTest();
         QCOMPARE(widget.gridCols(), expectCols);
+    }
+
+    void contextMenuEventAccepted()
+    {
+        // accept 语义回归：菜单弹出即关（exec 返回 nullptr），事件须已被消费。
+        ZzCoreTerminalWidget widget;
+        QTimer::singleShot(0, [] {
+            if (QWidget *popup = QApplication::activePopupWidget())
+                popup->close(); // 嵌套事件循环内关菜单，防 exec 阻塞
+        });
+        QContextMenuEvent e(QContextMenuEvent::Mouse, QPoint(5, 5),
+                            widget.mapToGlobal(QPoint(5, 5)));
+        e.ignore(); // QEvent 默认 accepted=true：先置 ignore 才能分辨 handler 是否消费
+        QApplication::sendEvent(&widget, &e);
+        QVERIFY(e.isAccepted());
     }
 };
 
