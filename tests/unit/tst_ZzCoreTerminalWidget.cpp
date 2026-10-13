@@ -107,6 +107,31 @@ private slots:
         QCOMPARE(widget.maxHScrollOffset(), 25 - 10);
     }
 
+    void wideCharInkSpansContinuationCell()
+    {
+        // 回归：普通绘制路径双宽字符被裁成半宽（选区路径正常）。
+        // 引擎口径实证：汉字 = WideLead（首格带文本）+ WideContinuation
+        //（续格 text 空串）；字形须横跨两格。像素断言：续格矩形内缘必须
+        // 出现非背景墨色——修复前续格的 fillRect 在文本之后执行，把左格
+        // 字形的右半重盖为纯背景。
+        ZzCoreTerminalWidget widget;
+        widget.resize(24 * widget.cellWidthForTest(),
+                      6 * widget.cellHeightForTest());
+        widget.recvData(QStringLiteral("中文\r\n").toUtf8()); // 中: 格0+1，文: 格2+3
+        const QImage img = widget.grab().toImage();
+        const int cw = widget.cellWidthForTest();
+        const int ch = widget.cellHeightForTest();
+        // 远处纯背景采样（第 4 行无内容）
+        const QColor bg = img.pixelColor(cw / 2, 4 * ch + ch / 2);
+        const QRect cont(cw + 1, 1, cw - 2, ch - 2); // 「中」续格内缘
+        int ink = 0;
+        for (int y = cont.top(); y <= cont.bottom(); ++y)
+            for (int x = cont.left(); x <= cont.right(); ++x)
+                if (img.pixelColor(x, y) != bg)
+                    ++ink;
+        QVERIFY2(ink > 0, "双宽字符续格内无任何墨色：字形被裁成半宽");
+    }
+
     void colorSchemeAppliesToRendering()
     {
         ZzCoreTerminalWidget widget;

@@ -226,8 +226,10 @@ void ZzCoreTerminalWidget::paintWrapped(QPainter &painter)
     const ZzRenderView &view = term_.renderView();
     const ZzSize      grid   = view.size();
 
-    // 全量重绘：无增量；逐格 fillRect 背景色（空格/续格 text 为空串，
-    // 仅铺底色），文本按 cell 前景色绘制。
+    // 全量重绘：无增量。每行两遍制——先铺整行背景、后画整行文本：
+    // 双宽字符（WideLead 首格带文本 + WideContinuation 续格空串）的字形
+    // 横跨两格，单遍「铺一格背景画一格文本」会让续格的背景填充盖掉
+    // 左格字形的右半（选区路径先铺后画，故一直正常）。
     for (int row = 0; row < grid.rows; ++row) {
         const ZzLineView line = lineViewAtVisibleRow(row);
         const int        y    = row * cellHeight_ + cellAscent_;
@@ -236,6 +238,9 @@ void ZzCoreTerminalWidget::paintWrapped(QPainter &painter)
             painter.fillRect(col * cellWidth_, row * cellHeight_,
                              cellWidth_, cellHeight_,
                              resolveCellColor(cell.background, false));
+        }
+        for (int col = 0; col < grid.cols; ++col) {
+            const ZzCellView cell = line.cellAt(col);
             if (cell.text.empty())
                 continue;
             painter.setPen(resolveCellColor(cell.foreground, true));
@@ -295,12 +300,18 @@ void ZzCoreTerminalWidget::paintUnwrapped(QPainter &painter)
             continue; // 顶部留白（拼接行不足一屏）
         const ZzStitchedLineView line = view.lineAt((std::size_t)idx);
         const int y = row * cellHeight_ + cellAscent_;
+        // 与 paintWrapped 同口径的两遍制：先背景后文本，双宽字符字形
+        // 横跨首格与续格，单遍会被续格背景填充裁掉右半。
         for (int c = hScrollOffset_;
              c < line.cellCount() && c - hScrollOffset_ < grid.cols; ++c) {
             const ZzCellView cell = line.cellAt(c);
             painter.fillRect((c - hScrollOffset_) * cellWidth_, row * cellHeight_,
                              cellWidth_, cellHeight_,
                              resolveCellColor(cell.background, false));
+        }
+        for (int c = hScrollOffset_;
+             c < line.cellCount() && c - hScrollOffset_ < grid.cols; ++c) {
+            const ZzCellView cell = line.cellAt(c);
             if (cell.text.empty())
                 continue;
             painter.setPen(resolveCellColor(cell.foreground, true));
