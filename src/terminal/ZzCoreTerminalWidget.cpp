@@ -175,9 +175,10 @@ void ZzCoreTerminalWidget::setTerminalFontPointSize(int pointSize)
     // 字号变更改变 cell 像素尺寸，按当前控件尺寸重算网格并沿用 resizeEvent
     // 的既有链路口径（gridResized → 宿主去抖转发 transport->resize）；
     // resizeEvent 是控件尺寸驱动，这里是字体驱动，换算与发射逻辑一致。
-    // 隐藏时 size() 是 Qt 默认 100x30 占位尺寸（resizeEvent 也只在可见后
-    // 投递），此时不重算——show 后的 resizeEvent/showEvent 会按新 cell
-    // 尺寸一次算准。
+    // 隐藏期不重算：从未 show 的控件 size() 是 Qt 默认占位尺寸（100x30），
+    // show 过再隐藏的虽保留最后真实尺寸，但隐藏期尺寸可能再变且
+    // resizeEvent 只在可见后投递——统一推迟到 show 后的
+    // resizeEvent/showEvent 按新 cell 尺寸一次算准（幂等）。
     if (isVisible())
         recomputeGridForCurrentSize();
 
@@ -540,7 +541,7 @@ void ZzCoreTerminalWidget::resizeEvent(QResizeEvent *event)
 void ZzCoreTerminalWidget::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
-    // 隐藏期字号变更不重算网格（size() 是占位尺寸）；重新可见时若 Qt 不
+    // 隐藏期字号变更不重算网格（隐藏期不重算是既定口径）；重新可见时若 Qt 不
     // 投递 resizeEvent（尺寸未变），网格会滞留旧 cell 口径——这里以现行
     // cell 尺寸对现行控件尺寸补一次对账（幂等：口径一致时重算早退）。
     recomputeGridForCurrentSize();

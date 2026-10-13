@@ -95,6 +95,9 @@ struct RawScheme {
 /** @brief 方案缓存（字段级回退：缺失字段取默认方案对应值）。 */
 [[nodiscard]] ZzTerminalPalette::Scheme loadScheme(const QString &name)
 {
+    // 线程约束：本缓存无锁，全部入口（scheme() 及渲染路径 colorForIndex）
+    // 仅在 GUI 线程调用——消费方是 paintEvent 与设置页，Qt 约定均在 GUI
+    // 线程。若日后引入工作线程取色，需加 QMutex 或改线程本地缓存。
     static QHash<QString, ZzTerminalPalette::Scheme> cache;
     const auto it = cache.constFind(name);
     if (it != cache.constEnd())
