@@ -305,19 +305,38 @@ private slots:
     void alternateScreenWheelSendsArrowKeys()
     {
         ZzCoreTerminalWidget widget;
+        widget.terminal().resize(10, 4);
+        for (int i = 0; i < 10; ++i) // 造历史，供 1049l 后 Primary 滚轮断言
+            widget.recvData(QByteArray("line\r\n"));
+        QVERIFY(widget.maxScrollOffset() > 0);
+
         widget.recvData(QByteArray("\x1b[?1049h")); // 进 Alternate 屏
         QSignalSpy spy(&widget, &ZzCoreTerminalWidget::sendData);
-        QWheelEvent up(QPointF(5, 5), QPointF(5, 5), QPoint(0, 0),
-                       QPoint(0, 120), Qt::NoButton, Qt::NoModifier,
-                       Qt::NoScrollPhase, false);
-        QApplication::sendEvent(&widget, &up);
-        QVERIFY(spy.count() >= 1);
-        QByteArray all;
-        for (const auto &call : spy)
-            all += call.at(0).toByteArray();
-        // 每滚轮档 3 行：3 次 ↑（普通模式 ESC[A，应用光标模式 ESC OA）
-        QVERIFY(all.count('A') >= 3);
+        const auto sendWheel = [&widget](int deltaY) {
+            QWheelEvent e(QPointF(5, 5), QPointF(5, 5), QPoint(0, 0),
+                          QPoint(0, deltaY), Qt::NoButton, Qt::NoModifier,
+                          Qt::NoScrollPhase, false);
+            QApplication::sendEvent(&widget, &e);
+        };
+        const auto drained = [&spy] {
+            QByteArray all;
+            for (const auto &call : spy)
+                all += call.at(0).toByteArray();
+            return all;
+        };
+
+        sendWheel(120); // 上滚一档 = 恰 3 次 ↑（DECCKM 默认关，CSI A 形式）
+        QCOMPARE(drained(), QByteArray("\x1b[A").repeated(3));
+
+        spy.clear();
+        sendWheel(-120); // 下滚对称：恰 3 次 ↓
+        QCOMPARE(drained(), QByteArray("\x1b[B").repeated(3));
+
         widget.recvData(QByteArray("\x1b[?1049l")); // 回 Primary
+        spy.clear();
+        sendWheel(120);
+        QCOMPARE(spy.count(), 0);           // Primary 滚轮不再发键
+        QCOMPARE(widget.scrollOffset(), 3); // 恢复滚历史语义（每档 3 行）
     }
 
     void hiddenTabFontSizeResyncsOnShow()
@@ -403,6 +422,64 @@ private slots:
         QCOMPARE(widget.scrollOffset(), 0); // 不足一档暂不滚
         wheelUp60(&widget);
         QCOMPARE(widget.scrollOffset(), 3); // 凑满一档：每档 3 行
+    }
+
+    void unwrapMouseDragCopiesFullLine()
+    {
+        // 回归 spike case 8（锚点重放 + 越缘横滚）：鼠标拖拽选中超宽行，
+        // 复制含屏外部分。钳制 24 列下 40 字符行超宽 16 列（前提自证）。
+        ZzCoreTerminalWidget widget;
+        widget.show(); // 隐藏 widget 的 resize() 不投递 QResizeEvent
+        const int cw = widget.cellWidthForTest();
+        const int ch = widget.cellHeightForTest();
+        widget.resize(24 * cw, 6 * ch);
+        QCOMPARE(widget.gridCols(), 24);
+        const QByteArray line = QByteArray("0123456789ABCDEFGHIJ").repeated(2); // 40 列
+        widget.recvData(line + "\r\n");
+        widget.setUnwrapMode(true);
+        QCOMPARE(widget.hScrollOffset(), 0); // "\r\n" 后光标回列 0，横向跟随不外溢
+        // 拼接行 0 的显示行 = rows - lineCount（钉底视口，scrollOffset=0）
+        const int rowY = (widget.gridRows()
+                          - (int)widget.terminal().unwrapView().lineCount()) * ch + 1;
+
+        // 手势一：窗口内拖拽，按下锚点在拖动中保持（引擎空选区 extend 语义会吞锚点）
+        QTest::mousePress(&widget, Qt::LeftButton, {}, QPoint(1, rowY));
+        QTest::mouseMove(&widget, QPoint(23 * cw + 1, rowY));
+        QVERIFY2(widget.terminal().hasSelection(), "拖拽中应保持按下锚点的选区");
+        QTest::mouseRelease(&widget, Qt::LeftButton, {}, QPoint(23 * cw + 1, rowY));
+        QCOMPARE(QGuiApplication::clipboard()->text(),
+                 QString::fromUtf8(line.left(24))); // [0,24)
+
+        // 手势二：拖拽越过右缘横向步进至钳制上限 16，全行 [0,40) 入剪贴板
+        QTest::mousePress(&widget, Qt::LeftButton, {}, QPoint(1, rowY));
+        for (int i = 0; i < 17; ++i) // 每次 move 步进一格，钳到 maxHScrollOffset=16
+            QTest::mouseMove(&widget, QPoint(24 * cw + 5, rowY));
+        QCOMPARE(widget.hScrollOffset(), 16);
+        QTest::mouseRelease(&widget, Qt::LeftButton, {}, QPoint(24 * cw + 5, rowY));
+        QCOMPARE(QGuiApplication::clipboard()->text(), QString::fromUtf8(line));
+    }
+
+    void selectionHighlightPenDoesNotLeak()
+    {
+        // 回归 spike case 9（画笔外泄）：选区高亮的 highlightedText 画笔须
+        // save/restore，选中行下方行仍以 cell 前景色绘制（grab 像素级验证）。
+        ZzCoreTerminalWidget widget;
+        const int cw = widget.cellWidthForTest();
+        const int ch = widget.cellHeightForTest();
+        widget.resize(24 * cw, 6 * ch);
+        widget.recvData(QByteArray("aaaaa\r\nbbbbb\r\n")); // 行 0/行 1
+        QTest::mousePress(&widget, Qt::LeftButton, {}, QPoint(1, 1));
+        QTest::mouseMove(&widget, QPoint(2 * cw + 1, 1)); // 选中行 0 [0,3)
+        QTest::mouseRelease(&widget, Qt::LeftButton, {}, QPoint(2 * cw + 1, 1));
+
+        const QImage img = widget.grab().toImage();
+        const QColor bg = img.pixelColor(cw / 2, 5 * ch + ch / 2); // 空行底色
+        int ink = 0;
+        for (int y = ch + 1; y < 2 * ch - 1; ++y)
+            for (int x = 1; x < 5 * cw; ++x)
+                if (img.pixelColor(x, y) != bg)
+                    ++ink;
+        QVERIFY2(ink > 0, "选区下方行文本不可见：高亮画笔外泄");
     }
 };
 
