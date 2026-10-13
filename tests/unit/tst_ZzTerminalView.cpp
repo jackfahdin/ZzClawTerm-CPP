@@ -46,10 +46,9 @@ private slots:
 
     void gbkTranscodingRoundTrip()
     {
-        const QString path = QDir(QDir::tempPath())
-            .filePath(QStringLiteral("zzclawterm-view-gbk.ini"));
-        QFile::remove(path);
-        ZzAppSettings settings(path);
+        QTemporaryDir dir; // 断言失败栈展开亦清理
+        QVERIFY(dir.isValid());
+        ZzAppSettings settings(dir.filePath(QStringLiteral("gbk.ini")));
         settings.setEncoding(QStringLiteral("GBK"));
 
         ZzTerminalView view;
@@ -66,7 +65,6 @@ private slots:
         QCoreApplication::processEvents();
         QVERIFY(view.termWidget()->visibleLineTextForTest(0)
                     .startsWith(QStringLiteral("中")));
-        QFile::remove(path);
     }
 
     void sizeForwardsToTransport()
@@ -190,10 +188,9 @@ private slots:
      */
     void sessionEncodingOverridesGlobal()
     {
-        const QString path = QDir(QDir::tempPath())
-            .filePath(QStringLiteral("zzclawterm-view-session-encoding.ini"));
-        QFile::remove(path);
-        ZzAppSettings settings(path); // 全局默认 UTF-8
+        QTemporaryDir dir; // 断言失败栈展开亦清理
+        QVERIFY(dir.isValid());
+        ZzAppSettings settings(dir.filePath(QStringLiteral("session-encoding.ini"))); // 全局默认 UTF-8
 
         ZzTerminalView view;
         view.setSessionEncoding(QStringLiteral("GBK"));
@@ -204,7 +201,6 @@ private slots:
 
         view.setSessionEncoding(QString()); // 空串 = 跟随全局
         QCOMPARE(view.encoding(), ZzAppSettings::instance().encoding());
-        QFile::remove(path);
     }
 
     /**
@@ -232,15 +228,13 @@ private slots:
 
     void applySettingsPropagatesColorScheme()
     {
-        const QString path = QDir(QDir::tempPath())
-            .filePath(QStringLiteral("zzclawterm-view-colorscheme-test.ini"));
-        QFile::remove(path);
+        QTemporaryDir dir; // 断言失败栈展开亦清理
+        QVERIFY(dir.isValid());
         ZzTerminalView view;
-        ZzAppSettings settings(path);
+        ZzAppSettings settings(dir.filePath(QStringLiteral("colorscheme.ini")));
         settings.setColorScheme(QStringLiteral("Dracula"));
         view.applySettings(settings);
         QCOMPARE(view.termWidget()->colorSchemeName(), QStringLiteral("Dracula"));
-        QFile::remove(path);
     }
 };
 

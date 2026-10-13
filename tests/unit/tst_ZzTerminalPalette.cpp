@@ -24,7 +24,7 @@ private slots:
     void parsesSchemeFields()
     {
         const ZzTerminalPalette::Scheme s =
-            ZzTerminalPalette::scheme(QStringLiteral("Builtin Tango Dark"));
+            ZzTerminalPalette::scheme(ZzTerminalPalette::defaultSchemeName());
         QVERIFY(s.foreground.isValid());
         QVERIFY(s.background.isValid());
         QVERIFY(s.foreground != s.background);

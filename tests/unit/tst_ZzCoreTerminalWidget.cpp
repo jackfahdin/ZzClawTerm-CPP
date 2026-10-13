@@ -135,7 +135,7 @@ private slots:
     void colorSchemeAppliesToRendering()
     {
         ZzCoreTerminalWidget widget;
-        widget.setColorScheme(QStringLiteral("Builtin Tango Dark"));
+        widget.setColorScheme(ZzTerminalPalette::defaultSchemeName());
         // 方案切换后默认背景色变化即生效（paintEvent 全铺背景）
         widget.setColorScheme(QStringLiteral("iTerm2 Solarized Light"));
         // 不断言像素（offscreen 无意义），断言内部态与无崩溃：
