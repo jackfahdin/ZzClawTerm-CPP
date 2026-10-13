@@ -2,6 +2,7 @@
 
 #include <QtCore/QStringConverter>
 #include <QtCore/QTemporaryDir>
+#include <QtWidgets/QScrollBar>
 
 #include "ZzMockTransport.h"
 #include "settings/ZzAppSettings.h"
@@ -235,6 +236,23 @@ private slots:
         settings.setColorScheme(QStringLiteral("Dracula"));
         view.applySettings(settings);
         QCOMPARE(view.termWidget()->colorSchemeName(), QStringLiteral("Dracula"));
+    }
+
+    void scrollbarPageStepTracksViewportRows()
+    {
+        ZzTerminalView view;
+        const auto bars = view.findChildren<QScrollBar *>();
+        QScrollBar *vbar = nullptr, *hbar = nullptr;
+        for (QScrollBar *bar : bars) {
+            if (bar->orientation() == Qt::Vertical)   vbar = bar;
+            if (bar->orientation() == Qt::Horizontal) hbar = bar;
+        }
+        QVERIFY(vbar && hbar);
+        QCOMPARE(vbar->pageStep(), view.termWidget()->gridRows());
+        QCOMPARE(hbar->pageStep(), view.termWidget()->gridCols());
+        emit view.termWidget()->gridResized(132, 43);
+        QCOMPARE(vbar->pageStep(), 43);
+        QCOMPARE(hbar->pageStep(), 132);
     }
 };
 

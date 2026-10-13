@@ -114,6 +114,17 @@ ZzTerminalView::ZzTerminalView(QWidget *parent)
                 emit sizeChanged(cols, rows);
             });
 
+    // pageStep = 视口行/列数：滑块比例与滑槽点击步进随网格（构造快照 +
+    // gridResized 跟随；值域 maximum=scrollOffset 上限即「文档长−视口」，
+    // 与 Qt pageStep 口径一致）。对齐 fork TerminalDisplay::setScroll 口径。
+    m_vbar->setPageStep(m_term->gridRows());
+    m_hbar->setPageStep(m_term->gridCols());
+    connect(m_term, &ZzCoreTerminalWidget::gridResized, this,
+            [this](int cols, int rows) {
+                m_vbar->setPageStep(rows);
+                m_hbar->setPageStep(cols);
+            });
+
     applySettings(ZzAppSettings::instance());
 }
 
