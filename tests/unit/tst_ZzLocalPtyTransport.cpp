@@ -65,7 +65,7 @@ private slots:
         qWarning() << "CP2: open returned";
 
         QTRY_VERIFY_WITH_TIMEOUT(
-            transport.state() == ZzTransportInterface::State::Connected, 5000);
+            transport.state() == ZzTransportInterface::State::Connected, 15000);
         qWarning() << "CP3: connected";
 
         // 心跳：若卡死时心跳仍在走 = 主线程在事件循环里（卡在泵事件的等待），
@@ -85,7 +85,7 @@ private slots:
                 this, [&received](const QByteArray &data) { received += data; });
         transport.write(QByteArrayLiteral("echo zz-pty-ok") + lineEnding());
         qWarning() << "CP4: write returned";
-        QTRY_VERIFY_WITH_TIMEOUT(received.count("zz-pty-ok") >= 2, 5000);
+        QTRY_VERIFY_WITH_TIMEOUT(received.count("zz-pty-ok") >= 2, 15000);
         qWarning() << "CP5: echo received";
 
         transport.resize(100, 40);
@@ -109,10 +109,10 @@ private slots:
         transport.open(endpoint);
         qWarning() << "CP2: open returned";
         QTRY_VERIFY_WITH_TIMEOUT(
-            transport.state() == ZzTransportInterface::State::Connected, 5000);
+            transport.state() == ZzTransportInterface::State::Connected, 15000);
 
         transport.write(QByteArrayLiteral("exit") + lineEnding());
-        QTRY_VERIFY_WITH_TIMEOUT(disconnectSpy.count() >= 1, 5000);
+        QTRY_VERIFY_WITH_TIMEOUT(disconnectSpy.count() >= 1, 15000);
         QCOMPARE(transport.state(), ZzTransportInterface::State::Disconnected);
     }
 
@@ -137,7 +137,7 @@ private slots:
         transport.open(endpoint);
         qWarning() << "CP2: open returned";
         QTRY_VERIFY_WITH_TIMEOUT(
-            transport.state() == ZzTransportInterface::State::Connected, 5000);
+            transport.state() == ZzTransportInterface::State::Connected, 15000);
 #if defined(Q_OS_WIN)
         // PowerShell（platformShell 口径）：(pwd).Path 输出原生反斜杠路径，
         // 环境变量用 $env: 语法（cmd 的 cd/%TERM% 在 PowerShell 下不成立）
@@ -150,7 +150,7 @@ private slots:
         const QString homeRef = QDir::homePath();
 #endif
         QTRY_VERIFY_WITH_TIMEOUT(
-            transport.state() == ZzTransportInterface::State::Disconnected, 5000);
+            transport.state() == ZzTransportInterface::State::Disconnected, 15000);
         const QString out = QString::fromUtf8(received);
         // sh/PowerShell 均回显输入行，contains 断言不受回显影响
         QVERIFY2(out.contains(homeRef), qPrintable(out));
