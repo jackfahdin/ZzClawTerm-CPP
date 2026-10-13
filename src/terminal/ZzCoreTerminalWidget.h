@@ -121,8 +121,9 @@ signals:
     void historyTopReached();
 
 public:
-    /** @brief 读回桥注入完成后调用：重发射滚动范围/夹取偏移/重绘。 */
-    void notifyHistoryPrepended();
+    /** @brief 读回桥注入完成后调用：重发射滚动范围/夹取偏移/锚点正移/重绘。
+     *  @param prepended 本次实际注入持行数（capacity==0 即注即裁时为 0）。 */
+    void notifyHistoryPrepended(int prepended);
     /** @brief 外部触发点（滚动条拖到顶等）：发射 historyTopReached 请求读回注入。 */
     void requestOlderHistory() { emit historyTopReached(); }
 

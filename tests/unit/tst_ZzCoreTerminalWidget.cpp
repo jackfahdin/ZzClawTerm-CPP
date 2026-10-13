@@ -348,6 +348,42 @@ private slots:
         QVERIFY(e.isAccepted());
     }
 
+    void selectionAnchorShiftsOnHistoryPrepend()
+    {
+        // 回归：拖拽选区进行中发生读回注入，锚点副本须随内容顺移，
+        // 否则下次 mouseMove 重放旧锚点把选区盖回漂移位置。
+        //
+        // 与简报字面量的出入（实测核实）：字面量「锚定行 0、下移拖到行 2」
+        // 在 24×6 钳制网格上锚点正移后 line(5) > 目标 line(2)，拖拽反转为
+        // 后向选区，selectionRange 词典序归一化后锚点侧落到 end，start
+        // 恒为 2——修复后也不可能见到 5。改为保持前向选区：锚定可见顶行
+        //（逻辑行 hist），注入 +5 后拖到底行（逻辑行 hist+5，与锚点同列序
+        // 保持 forward），锚点侧即 start，start.line 期望 = hist + 5。
+        ZzCoreTerminalWidget widget;
+        widget.show(); // 隐藏 widget 的 resize() 不投递 QResizeEvent（Qt 延迟到 show）
+        widget.resize(24 * widget.cellWidthForTest(),
+                      6 * widget.cellHeightForTest()); // 钳制下限网格，行列确定
+        for (int i = 0; i < 20; ++i)
+            widget.recvData(QStringLiteral("L%1\r\n").arg(i).toUtf8());
+
+        const int cw = widget.cellWidthForTest();
+        const int ch = widget.cellHeightForTest();
+        const std::int64_t hist =
+            std::int64_t(widget.terminal().historyView().lineCount());
+        QVERIFY(hist > 0); // 前提：有历史，可见顶行映射到逻辑行 hist
+
+        QTest::mousePress(&widget, Qt::LeftButton, Qt::NoModifier,
+                          QPoint(cw / 2, ch / 2)); // 锚在可见行 0 = 逻辑行 hist
+        widget.notifyHistoryPrepended(5);          // 注入 5 行（等价桥回调）
+        QTest::mouseMove(&widget, QPoint(3 * cw, 5 * ch + ch / 2)); // 拖到底行
+        QTest::mouseRelease(&widget, Qt::LeftButton, Qt::NoModifier,
+                            QPoint(3 * cw, 5 * ch + ch / 2));
+
+        ZzLogicalPos start, end;
+        QVERIFY(widget.terminal().selectionRange(start, end));
+        QCOMPARE(start.line, hist + 5); // 锚点正移：hist → hist + 5
+    }
+
     void hiResWheelAccumulatesRemainder()
     {
         // hi-res 小 delta 累余数：两次 +60（各不足一档）须合成一档上滚 3 行；

@@ -711,8 +711,13 @@ void ZzCoreTerminalWidget::wheelEvent(QWheelEvent *event)
     QWidget::wheelEvent(event);
 }
 
-void ZzCoreTerminalWidget::notifyHistoryPrepended()
+void ZzCoreTerminalWidget::notifyHistoryPrepended(int prepended)
 {
+    // 注入使统一行号顺移 +prepended：拖拽中的锚点副本同步正移（Core 侧
+    // selection 已由 prependHistoryLines 正移；此副本在下次 mouseMove
+    // 全量重放，不正移会把选区盖回漂移位置）。非拖拽态无害（下次
+    // mousePress 重算）。
+    selAnchor_.line += prepended;
     emit scrollRangeChanged(maxScrollOffset()); // 上限增长，滚动条扩展
     setScrollOffset(scrollOffset_);             // 夹取（数值不变即视口稳定）
     update();

@@ -148,8 +148,10 @@ void ZzScrollbackBridge::injectOlderBlock(int maxLines)
     // M19 原语（ZzTerminal::prependHistoryLines）：注入历史最旧端，
     // droppedLineCount 基线同步回退 N，既有行绝对行号（基线+idx）与
     // 追加差分 newest（基线+lineCount）跨注入恒等，差分天然跳过注入行
+    const std::size_t histBefore = hv.lineCount();
     if (m_term->terminal().prependHistoryLines(std::move(lines)))
-        m_term->notifyHistoryPrepended();
+        m_term->notifyHistoryPrepended(
+            int(m_term->terminal().historyView().lineCount() - histBefore));
 }
 
 void ZzScrollbackBridge::simulateDegradationForTest(const QString &reason)
