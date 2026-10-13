@@ -24,13 +24,21 @@ ZzScrollbackBridge::ZzScrollbackBridge(ZzCoreTerminalWidget *term,
         // 绝对序号对账：seen 为已追加的绝对行号（含 dropped 偏移）
         std::uint64_t newest = dropped + count;
         const std::uint64_t gen = hv.generation();
-        if (gen != m_lastGeneration && newest < m_seenLineNo
-            && !m_term->terminal().isAlternateScreen()) {
-            // 非 resize 的历史收缩兜底（ED 3 清滚动区等：列数未变无
-            // gridResized，gen 收缩只能在此侦测）：回锚。Alternate 下
+        // ED 3 精确侦测（Core clearCount）：清后现存历史全部未落盘，游标锚到
+        // dropped——同批再滚动多少行都不依赖 newest/seen 比较；Alternate 期间
+        // ED3 清的是 Primary 历史，同样生效（此处 count=0，追加循环自然空转，
+        // 退出后首个主屏 feed 经差分全量补落盘）
+        const std::uint64_t clears = hv.clearCount();
+        if (clears != m_lastClearCount) {
+            m_seenLineNo = dropped;
+            m_lastClearCount = clears;
+        } else if (gen != m_lastGeneration && newest < m_seenLineNo
+                   && !m_term->terminal().isAlternateScreen()) {
+            // 无 clearCount 后端的收缩兜底：收缩=清史语义，锚 dropped 而非
+            // newest——清后现存行皆是未落盘的新滚出行。Alternate 下
             // lineCount 契约归零是伪收缩，由守卫排除（alt 期间列变
             // reflow 的真实回锚在 gridResized 已完成）。
-            m_seenLineNo = newest;
+            m_seenLineNo = dropped;
         }
         m_lastGeneration = gen; // 代计数随 feed 常规保鲜（reflow 回锚在 gridResized）
         appendScrolloutsUpTo(dropped, count, newest);

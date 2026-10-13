@@ -493,6 +493,65 @@ private slots:
         QCOMPARE(historyLineText(hv, 1), QStringLiteral("123456789"));
     }
 
+    /**
+     * @brief Z3 日志完整性 b①：ED3 与新输出同单批 feed，且批内滚动数 ≥
+     *        旧已落盘数——收缩向兜底看不见（newest ≥ seen），修复前该批滚出行
+     *        被旧游标锚过；clearCount 精确回锚后逐行落盘。
+     */
+    void ed3SameBatchScrolloutNotSwallowed()
+    {
+        ZzCoreTerminalWidget term;
+        term.terminal().resize(10, 3);
+        ZzLogEngine engine(ZzLogEngine::Config{});
+        QVERIFY(engine.open());
+        ZzScrollbackBridge bridge(&term, &engine);
+
+        // 8 行进 3 行屏：历史 6（l1..l6 落盘），屏 [l7, l8, 空光标行]
+        for (int i = 1; i <= 8; ++i)
+            term.recvData(QStringLiteral("l%1\r\n").arg(i).toUtf8());
+        QCOMPARE(engine.totalLines(), 6ULL);
+
+        // 单批：ED3 + 8 行输出（批内滚动 8 行 > 旧已落盘 6 行）
+        term.recvData(QByteArray(
+            "\033[3Jq1\r\nq2\r\nq3\r\nq4\r\nq5\r\nq6\r\nq7\r\nq8\r\n"));
+        // 滚出序：l7、l8（清后首批滚出的屏上旧行）+ q1..q6，共 8 行全落盘
+        QCOMPARE(engine.totalLines(), 14ULL);
+        QCOMPARE(logTexts(engine.getLines(6, 8)),
+                 QStringList({QStringLiteral("l7"), QStringLiteral("l8"),
+                              QStringLiteral("q1"), QStringLiteral("q2"),
+                              QStringLiteral("q3"), QStringLiteral("q4"),
+                              QStringLiteral("q5"), QStringLiteral("q6")}));
+    }
+
+    /**
+     * @brief Z3 日志完整性 b②：Alternate 内 ED3（清 Primary 历史）再退出，
+     *        首个主屏 feed 的滚出行同类不吞（alt 守卫不排除 clearCount 回锚）。
+     */
+    void ed3InAltThenExitDoesNotSwallowPrimaryScrollout()
+    {
+        ZzCoreTerminalWidget term;
+        term.terminal().resize(10, 3);
+        ZzLogEngine engine(ZzLogEngine::Config{});
+        QVERIFY(engine.open());
+        ZzScrollbackBridge bridge(&term, &engine);
+
+        for (int i = 1; i <= 8; ++i)
+            term.recvData(QStringLiteral("l%1\r\n").arg(i).toUtf8());
+        QCOMPARE(engine.totalLines(), 6ULL);
+
+        term.recvData(QByteArray("\033[?1049h"));   // 进 Alternate
+        term.recvData(QByteArray("\033[3J"));       // alt 内清 Primary 历史
+        // 退 alt（1049l 恢复主屏）+ 足量输出（滚动 8 > 旧 6）
+        term.recvData(QByteArray(
+            "\033[?1049lq1\r\nq2\r\nq3\r\nq4\r\nq5\r\nq6\r\nq7\r\nq8\r\n"));
+        QCOMPARE(engine.totalLines(), 14ULL);
+        QCOMPARE(logTexts(engine.getLines(6, 8)),
+                 QStringList({QStringLiteral("l7"), QStringLiteral("l8"),
+                              QStringLiteral("q1"), QStringLiteral("q2"),
+                              QStringLiteral("q3"), QStringLiteral("q4"),
+                              QStringLiteral("q5"), QStringLiteral("q6")}));
+    }
+
 private:
     /** @brief 历史第 idx 行纯文本（去尾部填充空格）。 */
     static QString historyLineText(const ZzHistoryView &hv, std::size_t idx)

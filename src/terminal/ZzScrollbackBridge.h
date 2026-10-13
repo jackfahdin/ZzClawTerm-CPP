@@ -69,5 +69,6 @@ private:
     ZzLogEngine *m_engine;
     std::uint64_t m_seenLineNo = 0; ///< 追加对账游标：已落盘的绝对行号（含 dropped 偏移）
     std::uint64_t m_lastGeneration = 0; ///< 上一帧历史代计数（reflow/重组侦测）
+    std::uint64_t m_lastClearCount = 0; ///< 上一帧清史计数（ED 3 精确侦测）
     int m_lastCols = -1; ///< 上次 gridResized 的列数（列变 reflow 与纯行变甄别）
 };
