@@ -132,9 +132,10 @@ private slots:
             transport.state() == ZzTransportInterface::State::Disconnected, 5000);
         const QString out = QString::fromUtf8(received);
         // sh/PowerShell 均回显输入行，contains 断言不受回显影响
-        QVERIFY(out.contains(homeRef));
-        QVERIFY(out.contains(QStringLiteral("T=xterm-256color")));
-        QVERIFY(out.contains(QStringLiteral("C=truecolor")));
+        QVERIFY2(out.contains(homeRef), qPrintable(out));
+        QVERIFY2(out.contains(QStringLiteral("T=xterm-256color")),
+                 qPrintable(out));
+        QVERIFY2(out.contains(QStringLiteral("C=truecolor")), qPrintable(out));
     }
 };
 
