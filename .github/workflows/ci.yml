@@ -52,7 +52,7 @@ jobs:
         with:
           version: '6.11.1'
           arch: ${{ matrix.qt-arch }}
-          modules: 'qtmultimedia'
+          modules: 'qtmultimedia qt5compat'
           aqtsource: ${{ matrix.aqt-src }}
           aqtversion: '==3.3.*'
 
@@ -268,7 +268,7 @@ jobs:
         with:
           version: '6.11.1'
           arch: ${{ matrix.qt-arch }}
-          modules: 'qtmultimedia'
+          modules: 'qtmultimedia qt5compat'
           aqtsource: ${{ matrix.aqt-src }}
           aqtversion: '==3.3.*'
 

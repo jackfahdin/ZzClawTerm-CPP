@@ -35,11 +35,12 @@ jobs:
           git config --global url."https://oauth2:${GITCODE_PAT}@gitcode.com/".insteadOf "git@gitcode.com:"
           git submodule update --init --recursive
 
-      - name: 安装 Qt 6.11.1（qtbase 即可）
+      - name: 安装 Qt 6.11.1（qtbase + qt5compat：Z2 起 CMake 要求 Core5Compat）
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.11.1'
           arch: linux_gcc_64
+          modules: 'qt5compat'
           aqtversion: '==3.3.*'
 
       - name: 集成测试依赖（Xvfb / xdpyinfo）
