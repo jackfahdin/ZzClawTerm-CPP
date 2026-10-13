@@ -67,6 +67,14 @@ private slots:
         QTRY_VERIFY_WITH_TIMEOUT(
             transport.state() == ZzTransportInterface::State::Connected, 5000);
         qWarning() << "CP3: connected";
+
+        // 心跳：若卡死时心跳仍在走 = 主线程在事件循环里（卡在泵事件的等待），
+        // 心跳停 = 直线代码硬阻塞（syscall 死锁）——区分两类根因
+        QTimer heartbeat;
+        int beats = 0;
+        connect(&heartbeat, &QTimer::timeout, this,
+                [&beats]() { qWarning() << "HB" << ++beats; });
+        heartbeat.start(30 * 1000);
         QVERIFY(stateSpy.count() >= 2); // Disconnected→Connecting→Connected
 
         // 写命令。注意断言要区分 PTY 输入回显与命令真实输出：回显只出现 1 次
@@ -81,6 +89,7 @@ private slots:
         qWarning() << "CP5: echo received";
 
         transport.resize(100, 40);
+        qWarning() << "CP5a: resize returned";
         transport.close();
         qWarning() << "CP6: close returned";
         QCOMPARE(transport.state(), ZzTransportInterface::State::Disconnected);
