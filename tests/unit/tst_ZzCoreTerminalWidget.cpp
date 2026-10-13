@@ -133,6 +133,28 @@ private slots:
         QVERIFY2(ink > 0, "双宽字符续格内无任何墨色：字形被裁成半宽");
     }
 
+    void blockCursorOnWideContinuationKeepsGlyphInk()
+    {
+        // 回归：宽字符写满行尾时引擎停光标于末列续格（wrap-pending），块状
+        // 光标盖住左格字形右半。修复后以反色画笔从首格原点重绘整字——
+        // 续格内缘须出现背景色笔画像素（修复前整块纯色，计数为 0）。
+        ZzCoreTerminalWidget widget;
+        widget.resize(80 * widget.cellWidthForTest(),
+                      6 * widget.cellHeightForTest()); // 保证 grab 覆盖格 79
+        widget.recvData(QStringLiteral("中").repeated(40).toUtf8()); // 80 格满，光标停格79
+        const QImage img = widget.grab().toImage();
+        const int cw = widget.cellWidthForTest();
+        const int ch = widget.cellHeightForTest();
+        const QColor bg = img.pixelColor(cw / 2, 4 * ch + ch / 2); // 远处纯背景
+        const QRect cont(79 * cw + 1, 1, cw - 2, ch - 2); // 格79（续格）内缘
+        int bgInk = 0;
+        for (int y = cont.top(); y <= cont.bottom(); ++y)
+            for (int x = cont.left(); x <= cont.right(); ++x)
+                if (img.pixelColor(x, y) == bg)
+                    ++bgInk;
+        QVERIFY2(bgInk > 0, "光标盖住宽字符右半：续格内无反色笔画");
+    }
+
     void colorSchemeAppliesToRendering()
     {
         ZzCoreTerminalWidget widget;

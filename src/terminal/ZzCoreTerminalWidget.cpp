@@ -261,11 +261,21 @@ void ZzCoreTerminalWidget::paintWrapped(QPainter &painter)
                                cursor.position.row * cellHeight_,
                                cellWidth_, cellHeight_);
         painter.fillRect(cursorRect, resolveCellColor(ZzColor::Default(), true));
-        const ZzCellView under = view.lineAt(cursor.position.row).cellAt(cursor.position.col);
-        if (!under.text.empty()) {
-            painter.setPen(resolveCellColor(ZzColor::Default(), false));
-            painter.drawText(cursor.position.col * cellWidth_,
-                             cursor.position.row * cellHeight_ + cellAscent_,
+        const ZzLineView cursorLine = view.lineAt(cursor.position.row);
+        const ZzCellView under = cursorLine.cellAt(cursor.position.col);
+        painter.setPen(resolveCellColor(ZzColor::Default(), false));
+        const int textY = cursor.position.row * cellHeight_ + cellAscent_;
+        if (under.width == ZzCellWidth::WideContinuation
+            && cursor.position.col > 0) {
+            // 光标落在宽字符续格（行尾 wrap-pending 或 CSI CUP 定位）：
+            // 块盖住左格字形右半，从首格原点以反色重绘整字，右半笔画
+            // 盖回光标块上（与窄字符「重绘该格文本」同口径）。
+            const ZzCellView lead = cursorLine.cellAt(cursor.position.col - 1);
+            if (!lead.text.empty())
+                painter.drawText((cursor.position.col - 1) * cellWidth_, textY,
+                                 QString::fromStdString(lead.text));
+        } else if (!under.text.empty()) {
+            painter.drawText(cursor.position.col * cellWidth_, textY,
                              QString::fromStdString(under.text));
         }
     }
