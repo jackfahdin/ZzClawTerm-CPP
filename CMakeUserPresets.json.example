@@ -7,6 +7,13 @@
       "cacheVariables": {
         "CMAKE_PREFIX_PATH": "/home/zz/Qt/6.11.1/gcc_64"
       }
+    },
+    {
+      "name": "local-windows-msvc-release",
+      "inherits": "windows-msvc-release",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "D:/SoftWare/Qt/6.12.0/msvc2022_64"
+      }
     }
   ]
 }
