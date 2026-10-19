@@ -22,7 +22,7 @@ jobs:
       matrix:
         include:
           - { os: ubuntu-24.04, preset: linux-gcc-release, qt-arch: linux_gcc_64 }
-          - { os: windows-2022, preset: windows-msvc2022-release, qt-arch: win64_msvc2022_64,
+          - { os: windows-2022, preset: windows-msvc-release, qt-arch: win64_msvc2022_64,
               aqt-src: 'git+https://github.com/miurahr/aqtinstall.git@16db45a70b5905ad596941b223469bc86a56901e' }
           - { os: macos-14, preset: macos-clang-release, qt-arch: clang_64 }
     runs-on: ${{ matrix.os }}
@@ -97,6 +97,12 @@ jobs:
           done
           echo "未找到 runner 自带 OpenSSL" >&2
           exit 1
+
+      # Windows 预设已切 Ninja + cl（windows-msvc-*，单配置），cl 不在默认
+      # PATH，需先进入 VS 2022 x64 开发环境（与 ZzPureTools CI 同一锁定提交）。
+      - name: 进入 Visual Studio 2022 x64 环境
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
 
       - name: 配置与构建
         shell: bash
@@ -323,6 +329,12 @@ jobs:
           done
           echo "未找到 runner 自带 OpenSSL" >&2
           exit 1
+
+      # Windows 打包走 scripts/package-windows.ps1（Ninja + cl 预设），
+      # 需先进 VS 2022 x64 环境（同 build-test job）。
+      - name: 进入 Visual Studio 2022 x64 环境
+        if: matrix.kind == 'windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
 
       - name: 打包
         shell: bash

@@ -101,6 +101,12 @@ jobs:
           echo "未找到 runner 自带 OpenSSL" >&2
           exit 1
 
+      # Windows 打包走 scripts/package-windows.ps1（Ninja + cl 预设），
+      # 需先进 VS 2022 x64 环境（同 ci.yml）。
+      - name: 进入 Visual Studio 2022 x64 环境
+        if: matrix.kind == 'windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756
+
       - name: 打包（版本号取 tag）
         shell: bash
         env:

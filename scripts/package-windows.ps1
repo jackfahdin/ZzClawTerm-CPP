@@ -14,13 +14,13 @@ if (-not $QtRoot) { throw "请通过 -QtRoot 或 QT_ROOT 环境变量提供 Qt �
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 try {
-    cmake --preset windows-msvc2022-release
-    cmake --build --preset windows-msvc2022-release
+    cmake --preset windows-msvc-release
+    cmake --build --preset windows-msvc-release
 
     $dist = "$root/dist/windows"
     if (Test-Path $dist) { Remove-Item -Recurse -Force $dist }
     New-Item -ItemType Directory -Force $dist | Out-Null
-    Copy-Item "$root/build/windows-msvc2022-release/src/Release/ZzClawTerm.exe" $dist
+    Copy-Item "$root/build/windows-msvc-release/src/ZzClawTerm.exe" $dist
 
     & "$QtRoot/bin/windeployqt.exe" --release --no-translations `
         --compiler-runtime "$dist/ZzClawTerm.exe"

@@ -118,7 +118,7 @@ cmake --build --preset linux-gcc-debug
 | 平台 | Configure / Build / Test preset |
 | ---- | ---- |
 | Linux | `linux-gcc-debug`、`linux-gcc-release` |
-| Windows | `windows-msvc2022-debug`、`windows-msvc2022-release` |
+| Windows | `windows-msvc-debug`、`windows-msvc-release`（Ninja + cl，需在 VS 2022 x64 开发环境中执行） |
 | macOS | `macos-clang-debug`、`macos-clang-release`（部署目标 macOS 13.3） |
 
 构建产物在 `build/<preset>/src/ZzClawTerm`。
