@@ -155,6 +155,14 @@ private slots:
         window->show();
         QVERIFY(QTest::qWaitForWindowExposed(window));
 
+        // build() 后的 refreshTranslations 不得覆盖装配期自定义标题（上游
+        // customWindowTitle 守卫的集成回归；防 ZzPureTools 默认标题回退）
+        const QString windowTitle = window->windowTitle();
+        QVERIFY2(!windowTitle.contains(QStringLiteral("ZzPureTools")),
+                 qPrintable(QStringLiteral("窗口标题被库默认覆盖：%1").arg(windowTitle)));
+        QVERIFY2(windowTitle.endsWith(QStringLiteral("ZzClawTerm")),
+                 qPrintable(QStringLiteral("窗口标题未保留应用名：%1").arg(windowTitle)));
+
         // 延迟工厂首开（等价点击活动栏「会话」）
         QVERIFY(s_workspace->showPanel(
             ZzPureTools::ZzWorkspacePanelId(QStringLiteral("sessions"))));
