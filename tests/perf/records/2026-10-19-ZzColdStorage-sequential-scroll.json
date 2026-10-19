@@ -1,0 +1,24 @@
+{
+    "details": {
+        "pageRows": 24,
+        "pages": 1000,
+        "totalLines": 1024000,
+        "worstMs": 0.035209
+    },
+    "environment": {
+        "buildType": "Release",
+        "compiler": "GCC 15.2.0",
+        "cpu": "x86_64",
+        "gitCommit": "979e22acbe48ec682078d4a1a8dcd19806b90bdc",
+        "kernel": "7.0.0-38-generic",
+        "memory_mb": 31193,
+        "os": "Ubuntu 26.04.1 LTS",
+        "qtVersion": "6.11.1"
+    },
+    "measured": 0.001571089,
+    "passed": true,
+    "testName": "ZzColdStorage-sequential-scroll",
+    "threshold": 1,
+    "timestamp": "2026-10-19T08:52:53Z",
+    "unit": "ms/page"
+}

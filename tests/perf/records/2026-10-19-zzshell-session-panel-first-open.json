@@ -1,0 +1,21 @@
+{
+    "details": {
+        "samples": 1
+    },
+    "environment": {
+        "buildType": "Release",
+        "compiler": "GNU 15.2.0",
+        "cpu": "x86_64",
+        "gitCommit": "80e4cb0",
+        "kernel": "7.0.0-38-generic",
+        "memory_mb": 31193,
+        "os": "Ubuntu 26.04.1 LTS",
+        "qtVersion": "6.11.1"
+    },
+    "measured": 0,
+    "passed": true,
+    "testName": "会话面板延迟工厂首开耗时",
+    "threshold": 300,
+    "timestamp": "2026-10-19T08:52:45Z",
+    "unit": "ms"
+}
