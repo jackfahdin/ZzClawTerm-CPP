@@ -56,15 +56,12 @@ qt_add_resources(tst_ZzCoreTerminalWidget "tst_ZzCoreTerminalWidget_test_font"
     FILES "${CMAKE_CURRENT_SOURCE_DIR}/unit/fonts/ZzClawTermTestWide.otf")
 zz_add_qtest(tst_ZzTerminalPalette unit/tst_ZzTerminalPalette.cpp)
 zz_add_qtest(tst_ZzTabManager unit/tst_ZzTabManager.cpp)
-# Z1 摘除（QTermWidget 直构造）——随特性收口重写回（总体设计 §6）
-# zz_add_qtest(tst_ZzSplitContainer unit/tst_ZzSplitContainer.cpp)
+zz_add_qtest(tst_ZzSplitContainer unit/tst_ZzSplitContainer.cpp)
 zz_add_qtest(tst_ZzSshTransport unit/tst_ZzSshTransport.cpp)
-# Z1 摘除（QTermWidget 直构造）——随特性收口重写回（总体设计 §6）
-# zz_add_qtest(tst_ZzConnectFlow unit/tst_ZzConnectFlow.cpp)
+zz_add_qtest(tst_ZzConnectFlow unit/tst_ZzConnectFlow.cpp)
 zz_add_qtest(tst_ZzSessionPanel unit/tst_ZzSessionPanel.cpp)
 zz_add_qtest(tst_ZzSftpPanel unit/tst_ZzSftpPanel.cpp)
-# Z1 摘除（QTermWidget 直构造）——随特性收口重写回（总体设计 §6）
-# zz_add_qtest(tst_ZzSettingsPage unit/tst_ZzSettingsPage.cpp)
+zz_add_qtest(tst_ZzSettingsPage unit/tst_ZzSettingsPage.cpp)
 zz_add_qtest(tst_ZzScrollbackBridge unit/tst_ZzScrollbackBridge.cpp)
 zz_add_qtest(tst_ZzErrorUi unit/tst_ZzErrorUi.cpp)
 zz_add_qtest(tst_ZzAppShell unit/tst_ZzAppShell.cpp)

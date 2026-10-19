@@ -2,11 +2,11 @@
 
 #include "ZzMockTransport.h"
 #include "dialog/ZzMasterPasswordDialog.h"
-#include "qtermwidget.h"
 #include "session/ZzCredentialStore.h"
 #include "session/ZzForwardRule.h"
 #include "session/ZzSessionProfile.h"
 #include "tab/ZzTabManager.h"
+#include "terminal/ZzCoreTerminalWidget.h"
 #include "terminal/ZzTerminalView.h"
 #include "transport/ZzTransportRegistry.h"
 
@@ -66,7 +66,7 @@ private slots:
         QCOMPARE(mock->lastEndpoint.portForwards, profile.portForwards);
 
         // 双向字节流：键盘输入抵达传输，远端输出不崩溃
-        emit view->termWidget()->sendData("pwd\n", 4);
+        emit view->termWidget()->sendData(QByteArray("pwd\n"));
         QCoreApplication::processEvents();
         QCOMPARE(mock->writtenData, QByteArray("pwd\n"));
         mock->simulateData("/home/deploy\r\n");

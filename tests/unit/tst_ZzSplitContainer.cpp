@@ -127,7 +127,7 @@ private slots:
         QTest::qWait(50);
 
         QSignalSpy focusSpy(&container, &ZzSplitContainer::focusedViewChanged);
-        a->setFocus(); // 经 QTermWidget 焦点代理落到内部显示件
+        a->setFocus(); // 经 ZzTerminalView 焦点代理落到内部终端控件
         QTRY_VERIFY(QApplication::focusWidget() != nullptr);
         QTRY_COMPARE(container.focusedView(), a);
         QTRY_VERIFY(focusSpy.count() >= 1);
