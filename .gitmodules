@@ -1,6 +1,6 @@
 [submodule "third_party/ZzPureTools"]
 	path = third_party/ZzPureTools
-	url = git@github.com:jackfahdin/ZzPureTools.git
+	url = https://github.com/jackfahdin/ZzPureTools.git
 [submodule "third_party/ZzSshCore"]
 	path = third_party/ZzSshCore
 	url = git@gitcode.com:JackfahdinQt/ZzSshCore.git
@@ -17,5 +17,5 @@
 	shallow = true
 [submodule "third_party/ZzTermCore"]
 	path = third_party/ZzTermCore
-	url = git@github.com:jackfahdin/ZzTermCore.git
+	url = https://github.com/jackfahdin/ZzTermCore.git
 	branch = contour
