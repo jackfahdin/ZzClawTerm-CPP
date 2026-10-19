@@ -27,10 +27,6 @@ function(zz_require_submodule path)
     endif()
 endfunction()
 
-# Z1：ZzTermWidget（qtermwidget fork）已摘除——终端前端由
-# ZzCoreTerminalWidget（ZzTermCore 引擎）接管；子模块目录保留在
-# third_party/ 供配色/键位资源取值对照，不再参与构建。
-
 # ZzTermCore（终端引擎，Z1）：Native 后端静态消费，contour OFF
 #（spike 实证的静态链接约束）；引擎自带测试不在本工程编译
 #（其五项基线在 ZzTermCore 仓库自保）。

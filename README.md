@@ -150,7 +150,6 @@ test preset 与 configure preset 同名；失败时自动输出详细日志（`o
 | 路径 | 说明 |
 | ---- | ---- |
 | `ZzTermCore` | 终端引擎（自研；pin 在 contour 分支，Native 后端静态消费，contour 后端 OFF，其测试不在本工程编译） |
-| `ZzTermWidget` | 旧终端组件（qtermwidget fork）——Z1 起不参与构建，仅保留供配色/键位资源取值对照，Z4 删除 |
 | `ZzPureTools` | 应用框架（无边框窗口、路由、导航、Fluent 主题） |
 | `ZzSshCore` | libssh2 的 Qt 异步封装（自研；libssh2 CMake 移植版为其嵌套子模块，静态构建，OpenSSL 加密后端） |
 | `openssl` | vendored 预编译 bundle（缺失时回退系统 OpenSSL） |
