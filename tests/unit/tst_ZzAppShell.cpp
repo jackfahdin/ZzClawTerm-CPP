@@ -85,6 +85,10 @@ private slots:
         QMainWindow window;
         QVERIFY(shell.assemble(window));
         QVERIFY(shell.workspaceShell() != nullptr);
+        // Stacked 中央工作区：无框架外层标签/分屏容器，页面由堆叠容器承载
+        QVERIFY(shell.workspaceShell()->stackWidget() != nullptr);
+        QVERIFY(shell.workspaceShell()->tabWidget() == nullptr);
+        QVERIFY(shell.workspaceShell()->splitWorkspace() == nullptr);
         // 工作区根控件已挂为中央控件
         QCOMPARE(window.centralWidget(),
                  shell.workspaceShell()->workspaceWidget());
@@ -113,6 +117,17 @@ private slots:
             ZzPureTools::ZzWorkspacePanelId(QStringLiteral("sftp")));
         QVERIFY(filesShown);
         QVERIFY(shell.sftpPanel() != nullptr);
+    }
+
+    void invalidWorkspaceLayoutIsCleared()
+    {
+        auto &settings = ZzAppSettings::instance();
+        settings.setWorkspaceLayout(QByteArray("legacy-tabbed-layout"));
+
+        ZzAppShell shell(m_dir);
+        QMainWindow window;
+        QVERIFY(shell.assemble(window));
+        QCOMPARE(settings.workspaceLayout(), QByteArray());
     }
 
     void doubleClickOpensTabAndUpdatesStatusBar()

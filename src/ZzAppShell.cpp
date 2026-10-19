@@ -25,6 +25,7 @@
 #include <ZzPureTools/ZzNavigationController.h>
 #include <ZzPureTools/ZzPureApplication.h>
 #include <ZzPureTools/ZzRouteId.h>
+#include <ZzPureTools/ZzWorkspaceCenterMode.h>
 #include <ZzPureTools/ZzWorkspaceShell.h>
 #include <ZzPureTools/ZzWorkspaceTitleMode.h>
 
@@ -107,7 +108,8 @@ ZzCore::ZzResult<void> ZzAppShell::assemble(QMainWindow &window)
     auto *titleBar =
         applicationWindow != nullptr ? applicationWindow->titleBar() : nullptr;
 
-    auto created = ZzPureTools::ZzWorkspaceShell::create(&window, titleBar);
+    auto created = ZzPureTools::ZzWorkspaceShell::create(
+        &window, titleBar, ZzPureTools::ZzWorkspaceCenterMode::Stacked);
     if (!created) {
         return ZzCore::ZzResult<void>::failure(created.error());
     }
@@ -211,17 +213,15 @@ ZzCore::ZzResult<void> ZzAppShell::assemble(QMainWindow &window)
         auto restored = m_workspaceShell->restoreLayout(layout);
         if (!restored) {
             qWarning().noquote() << QStringLiteral(
-                "工作区布局恢复失败，使用默认布局：%1")
+                "工作区布局恢复失败，清空旧布局并使用默认布局：%1")
                 .arg(restored.error().technicalMessage());
+            // Stacked 不兼容旧 Tabbed 布局；清空后避免每次启动重复失败
+            ZzAppSettings::instance().setWorkspaceLayout({});
         }
     }
 
-    // 窗口标题接管：库默认 Application 模式显示宿主窗口标题（框架
-    // ZzApplicationWindowPrivate::refreshTranslations 固化为「ZzPureTools」），
-    // 改为 当前标签标题 - 应用名；当前标签标题由页面 windowTitle 提供
-    // （ZzWorkspaceShellPrivate::refreshTitle），终端页同步为会话名（见
-    // ZzTabManager::refreshWindowTitle）。放在 restoreLayout 之后：布局字节
-    // 含标题投影，旧版本存下的布局会覆盖此处设置（库事务语义，主仓不改库）。
+    // 窗口标题策略：当前页标题 - 应用名；当前页标题由页面 windowTitle 提供，
+    // 终端页同步为会话名（见 ZzTabManager::refreshWindowTitle）。
     m_workspaceShell->setApplicationTitle(QStringLiteral("ZzClawTerm"));
     m_workspaceShell->setTitleMode(
         ZzPureTools::ZzWorkspaceTitleMode::CurrentTabAndApplication);
