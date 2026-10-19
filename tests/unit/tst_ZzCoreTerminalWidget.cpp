@@ -2,6 +2,9 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QFontDatabase>
+#include <QFontInfo>
+#include <QFontMetrics>
 #include <QInputMethodEvent>
 #include <QTimer>
 #include <QWheelEvent>
@@ -116,6 +119,18 @@ private slots:
         // 出现非背景墨色——修复前续格的 fillRect 在文本之后执行，把左格
         // 字形的右半重盖为纯背景。
         ZzCoreTerminalWidget widget;
+        const int fontId = QFontDatabase::addApplicationFont(
+            QStringLiteral(":/test-fonts/ZzClawTermTestWide.otf"));
+        QVERIFY(fontId >= 0);
+        const QString family = QStringLiteral("ZzClawTerm Test Wide");
+        QVERIFY(QFontDatabase::applicationFontFamilies(fontId).contains(family));
+        widget.setFont(QFont(family));
+        widget.setTerminalFontPointSize(12); // 同时刷新控件缓存的 cell metrics
+        QCOMPARE(QFontInfo(widget.font()).family(), family);
+        const QFontMetrics fontMetrics(widget.font());
+        const int narrowAdvance = fontMetrics.horizontalAdvance(QLatin1Char('M'));
+        QCOMPARE(fontMetrics.horizontalAdvance(QStringLiteral("中")), 2 * narrowAdvance);
+        QCOMPARE(fontMetrics.horizontalAdvance(QStringLiteral("文")), 2 * narrowAdvance);
         widget.resize(24 * widget.cellWidthForTest(),
                       6 * widget.cellHeightForTest());
         widget.recvData(QStringLiteral("中文\r\n").toUtf8()); // 中: 格0+1，文: 格2+3
@@ -139,6 +154,18 @@ private slots:
         // 光标盖住左格字形右半。修复后以反色画笔从首格原点重绘整字——
         // 续格内缘须出现背景色笔画像素（修复前整块纯色，计数为 0）。
         ZzCoreTerminalWidget widget;
+        const int fontId = QFontDatabase::addApplicationFont(
+            QStringLiteral(":/test-fonts/ZzClawTermTestWide.otf"));
+        QVERIFY(fontId >= 0);
+        const QString family = QStringLiteral("ZzClawTerm Test Wide");
+        QVERIFY(QFontDatabase::applicationFontFamilies(fontId).contains(family));
+        widget.setFont(QFont(family));
+        widget.setTerminalFontPointSize(12); // 同时刷新控件缓存的 cell metrics
+        QCOMPARE(QFontInfo(widget.font()).family(), family);
+        const QFontMetrics fontMetrics(widget.font());
+        const int narrowAdvance = fontMetrics.horizontalAdvance(QLatin1Char('M'));
+        QCOMPARE(fontMetrics.horizontalAdvance(QStringLiteral("中")), 2 * narrowAdvance);
+        QCOMPARE(fontMetrics.horizontalAdvance(QStringLiteral("文")), 2 * narrowAdvance);
         widget.resize(80 * widget.cellWidthForTest(),
                       6 * widget.cellHeightForTest()); // 保证 grab 覆盖格 79
         widget.recvData(QStringLiteral("中").repeated(40).toUtf8()); // 80 格满，光标停格79
