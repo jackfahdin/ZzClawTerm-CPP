@@ -59,10 +59,21 @@ namespace {
            && (line < end.line || (line == end.line && col < end.col));
 }
 
+ZzBackendKind backendFromEnv() noexcept
+{
+#ifdef ZZCLAWTERM_WITH_CONTOUR
+    // 实验演示开关：ZZ_TERM_BACKEND=contour 切到 contour 后端；
+    // 默认 Native。contour 未编译进引擎时此开关不存在（编译期剔除）
+    if (qgetenv("ZZ_TERM_BACKEND") == "contour")
+        return ZzBackendKind::Contour;
+#endif
+    return ZzBackendKind::Native;
+}
+
 } // namespace
 
 ZzCoreTerminalWidget::ZzCoreTerminalWidget(QWidget *parent)
-    : QWidget(parent), term_(80, 24, ZzBackendKind::Native, 10000)
+    : QWidget(parent), term_(80, 24, backendFromEnv(), 10000)
 {
     scheme_     = ZzTerminalPalette::scheme(ZzTerminalPalette::defaultSchemeName());
     schemeName_ = ZzTerminalPalette::defaultSchemeName();

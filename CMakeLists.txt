@@ -27,11 +27,13 @@ function(zz_require_submodule path)
     endif()
 endfunction()
 
-# ZzTermCore（终端引擎，Z1）：Native 后端静态消费，contour OFF
-#（spike 实证的静态链接约束）；引擎自带测试不在本工程编译
-#（其五项基线在 ZzTermCore 仓库自保）。
+# ZzTermCore（终端引擎，Z1）：Native 后端静态消费（spike 实证的静态链接
+# 约束）；引擎自带测试不在本工程编译（其五项基线在 ZzTermCore 仓库自保）。
+# contour 后端默认 OFF（产品/CI 不变）；实验演示可 -DZZTERM_WITH_CONTOUR=ON
+# 打开（需 C++23 GCC14+/Clang18+，configure 期联网拉依赖），运行时经
+# ZZ_TERM_BACKEND=contour 环境变量切换（见 ZzCoreTerminalWidget）。
 zz_require_submodule(third_party/ZzTermCore)
-set(ZZTERM_WITH_CONTOUR OFF CACHE BOOL "" FORCE)
+option(ZZTERM_WITH_CONTOUR "集成 contour 后端（实验演示用）" OFF)
 set(ZZTERM_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/ZzTermCore)
 

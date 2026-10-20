@@ -98,6 +98,12 @@ target_link_libraries(ZzClawTermApp
         ZzSshCore
         ZzLog::ZzLog
 )
+
+# contour 后端实验演示：引擎编进 contour 时给终端控件开后端切换开关
+#（ZZ_TERM_BACKEND=contour），默认仍是 Native，行为不变
+if(ZZTERM_WITH_CONTOUR)
+    target_compile_definitions(ZzClawTermApp PRIVATE ZZCLAWTERM_WITH_CONTOUR=1)
+endif()
 # 计划 02/03 目标存在时才链接
 foreach(optional_target ZzSessionCore ZzLogEngine)
     if(TARGET ${optional_target})
