@@ -76,6 +76,10 @@ ZzSettingsPage::ZzSettingsPage(ZzAppSettings *settings, QWidget *parent)
     m_x11ServerCheck->setChecked(m_settings->x11ServerEnabled());
     m_formLayout->addRow(new QLabel(this), m_x11ServerCheck);
 
+    m_hyperlinkCheck = new QCheckBox(this);
+    m_hyperlinkCheck->setChecked(m_settings->hyperlinkEnabled());
+    m_formLayout->addRow(new QLabel(this), m_hyperlinkCheck);
+
     // SFTP 块大小：itemData 存字节数，0=自动（BDP 自适应，M6）
     m_sftpBlockSizeCombo = new QComboBox(this);
     m_sftpBlockSizeCombo->addItem(QString(), 0); // 文本见 retranslateUi()
@@ -119,6 +123,8 @@ ZzSettingsPage::ZzSettingsPage(ZzAppSettings *settings, QWidget *parent)
     });
     connect(m_x11ServerCheck, &QCheckBox::toggled,
             m_settings, &ZzAppSettings::setX11ServerEnabled);
+    connect(m_hyperlinkCheck, &QCheckBox::toggled,
+            m_settings, &ZzAppSettings::setHyperlinkEnabled);
     // 用 currentIndexChanged 而非 activated：测试经 setCurrentIndex 驱动，
     // 且二者都不含程序性回显误写（setter 同值短路兜底）
     connect(m_sftpBlockSizeCombo, &QComboBox::currentIndexChanged, this, [this](int index) {
@@ -142,6 +148,7 @@ void ZzSettingsPage::retranslateUi()
     setRowLabel(m_historyLinesSpin, tr("内存历史行数："));
     setRowLabel(m_credentialBackendCombo, tr("凭据后端："));
     setRowLabel(m_x11ServerCheck, tr("X11："));
+    setRowLabel(m_hyperlinkCheck, tr("超链接："));
     setRowLabel(m_sftpBlockSizeCombo, tr("SFTP 块大小："));
 
     m_credentialBackendCombo->setItemText(0, tr("自动（优先系统密钥环）"));
@@ -154,6 +161,11 @@ void ZzSettingsPage::retranslateUi()
     m_x11ServerCheck->setText(tr("启用 X server（启动时自动运行）"));
     m_x11ServerCheck->setToolTip(
         tr("关闭后停止内建 X server，新会话不再发起 X11 转发；重新开启即恢复"));
+
+    m_hyperlinkCheck->setText(tr("启用可点击超链接 (OSC 8)"));
+    m_hyperlinkCheck->setToolTip(
+        tr("开启后按住 Ctrl 悬停链接显示下划线与完整地址，Ctrl+点击在浏览器打开。\n"
+           "关闭后链接退化为纯文本，Ctrl+点击走原选区逻辑。"));
 
     m_sftpBlockSizeCombo->setItemText(0, tr("自动（BDP 自适应）"));
     m_sftpBlockSizeCombo->setToolTip(
@@ -179,4 +191,5 @@ QComboBox *ZzSettingsPage::colorSchemeCombo() const { return m_colorSchemeCombo;
 QSpinBox *ZzSettingsPage::historyLinesSpin() const { return m_historyLinesSpin; }
 QComboBox *ZzSettingsPage::credentialBackendCombo() const { return m_credentialBackendCombo; }
 QCheckBox *ZzSettingsPage::x11ServerCheck() const { return m_x11ServerCheck; }
+QCheckBox *ZzSettingsPage::hyperlinkCheck() const { return m_hyperlinkCheck; }
 QComboBox *ZzSettingsPage::sftpBlockSizeCombo() const { return m_sftpBlockSizeCombo; }

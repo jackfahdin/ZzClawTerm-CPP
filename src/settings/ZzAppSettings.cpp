@@ -126,6 +126,20 @@ void ZzAppSettings::setX11ServerEnabled(bool enabled)
     emit settingsChanged();
 }
 
+bool ZzAppSettings::hyperlinkEnabled() const
+{
+    return m_settings->value(QStringLiteral("terminal/hyperlinkEnabled"), true).toBool();
+}
+
+void ZzAppSettings::setHyperlinkEnabled(bool enabled)
+{
+    if (hyperlinkEnabled() == enabled) {
+        return;
+    }
+    m_settings->setValue(QStringLiteral("terminal/hyperlinkEnabled"), enabled);
+    emit settingsChanged();
+}
+
 QString ZzAppSettings::language() const
 {
     return m_settings->value(QStringLiteral("app/language"),

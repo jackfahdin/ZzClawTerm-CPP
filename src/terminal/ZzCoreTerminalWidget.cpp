@@ -2,6 +2,7 @@
 
 #include <QClipboard>
 #include <QContextMenuEvent>
+#include <QDesktopServices>
 #include <QFontDatabase>
 #include <QFontMetrics>
 #include <QGuiApplication>
@@ -12,6 +13,8 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QShowEvent>
+#include <QToolTip>
+#include <QUrl>
 #include <QWheelEvent>
 
 #include <span>
@@ -20,6 +23,8 @@
 #include <cstring>
 
 #include <ZzTerm/UnwrapView.h>
+
+#include "settings/ZzAppSettings.h"
 
 #include "ZzTerminalPalette.h"
 
@@ -84,6 +89,7 @@ ZzCoreTerminalWidget::ZzCoreTerminalWidget(QWidget *parent)
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_OpaquePaintEvent);
     setAttribute(Qt::WA_InputMethodEnabled, true);
+    setMouseTracking(true); // M22b：无按键移动也要 hover 检测（Ctrl+悬停链接）
 
     // 键盘编码字节与终端回传（DA1/DSR 等）统一经 output 通道发出，
     // 在此转发为 sendData 信号；编码模式位由 ZzTerminal 与 feed 联动同步。
@@ -237,6 +243,13 @@ void ZzCoreTerminalWidget::paintWrapped(QPainter &painter)
 {
     const ZzRenderView &view = term_.renderView();
     const ZzSize      grid   = view.size();
+    // M22b：Ctrl 按住期间所有链接格画下划线；hover 命中的同 id 段画半透明高亮
+    const bool linksActive = ZzAppSettings::instance().hyperlinkEnabled();
+    QColor linkHighlight;
+    if (linksActive && hoverHyperlinkId_ != 0) {
+        linkHighlight = palette().highlight().color();
+        linkHighlight.setAlpha(60);
+    }
 
     // 全量重绘：无增量。每行两遍制——先铺整行背景、后画整行文本：
     // 双宽字符（WideLead 首格带文本 + WideContinuation 续格空串）的字形
@@ -250,12 +263,24 @@ void ZzCoreTerminalWidget::paintWrapped(QPainter &painter)
             painter.fillRect(col * cellWidth_, row * cellHeight_,
                              cellWidth_, cellHeight_,
                              resolveCellColor(cell.background, false));
+            if (linkHighlight.isValid()
+                && cell.hyperlinkId == hoverHyperlinkId_)
+                painter.fillRect(col * cellWidth_, row * cellHeight_,
+                                 cellWidth_, cellHeight_, linkHighlight);
         }
         for (int col = 0; col < grid.cols; ++col) {
             const ZzCellView cell = line.cellAt(col);
+            const QColor fg = resolveCellColor(cell.foreground, true);
+            if (linksActive && ctrlHeld_ && cell.hyperlinkId != 0) {
+                // 下划线画在格底线（续格亦画，宽字符下划线不断线）
+                painter.setPen(fg);
+                const int uy = row * cellHeight_ + cellHeight_ - 1;
+                painter.drawLine(col * cellWidth_, uy,
+                                 (col + 1) * cellWidth_ - 1, uy);
+            }
             if (cell.text.empty())
                 continue;
-            painter.setPen(resolveCellColor(cell.foreground, true));
+            painter.setPen(fg);
             painter.drawText(col * cellWidth_, y,
                              QString::fromStdString(cell.text));
         }
@@ -312,6 +337,13 @@ void ZzCoreTerminalWidget::paintUnwrapped(QPainter &painter)
 {
     const ZzUnwrapView &view = term_.unwrapView();
     const ZzSize        grid = term_.size();
+    // M22b：同 paintWrapped——Ctrl 按住全链接下划线，hover 同 id 段高亮
+    const bool linksActive = ZzAppSettings::instance().hyperlinkEnabled();
+    QColor linkHighlight;
+    if (linksActive && hoverHyperlinkId_ != 0) {
+        linkHighlight = palette().highlight().color();
+        linkHighlight.setAlpha(60);
+    }
     // 拼接空间纵向视口：底部对齐，scrollOffset_ 为离底拼接行数。
     const std::size_t total = stitchedTotalLines();
     // 可见第 row 行的拼接索引 = total - scrollOffset_ - grid.rows + row
@@ -330,13 +362,25 @@ void ZzCoreTerminalWidget::paintUnwrapped(QPainter &painter)
             painter.fillRect((c - hScrollOffset_) * cellWidth_, row * cellHeight_,
                              cellWidth_, cellHeight_,
                              resolveCellColor(cell.background, false));
+            if (linkHighlight.isValid()
+                && cell.hyperlinkId == hoverHyperlinkId_)
+                painter.fillRect((c - hScrollOffset_) * cellWidth_,
+                                 row * cellHeight_,
+                                 cellWidth_, cellHeight_, linkHighlight);
         }
         for (int c = hScrollOffset_;
              c < line.cellCount() && c - hScrollOffset_ < grid.cols; ++c) {
             const ZzCellView cell = line.cellAt(c);
+            const QColor fg = resolveCellColor(cell.foreground, true);
+            if (linksActive && ctrlHeld_ && cell.hyperlinkId != 0) {
+                painter.setPen(fg);
+                const int uy = row * cellHeight_ + cellHeight_ - 1;
+                painter.drawLine((c - hScrollOffset_) * cellWidth_, uy,
+                                 (c - hScrollOffset_ + 1) * cellWidth_ - 1, uy);
+            }
             if (cell.text.empty())
                 continue;
-            painter.setPen(resolveCellColor(cell.foreground, true));
+            painter.setPen(fg);
             painter.drawText((c - hScrollOffset_) * cellWidth_, y,
                              QString::fromStdString(cell.text));
         }
@@ -461,6 +505,12 @@ void ZzCoreTerminalWidget::paintSelectionOnStitchedRow(QPainter &painter, std::s
 
 void ZzCoreTerminalWidget::keyPressEvent(QKeyEvent *event)
 {
+    // M22b：跟踪 Ctrl 按住态——按住期间所有链接格画下划线（重绘即显）
+    if (event->key() == Qt::Key_Control && !ctrlHeld_) {
+        ctrlHeld_ = true;
+        if (ZzAppSettings::instance().hyperlinkEnabled())
+            update();
+    }
     if (event->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)
         && event->key() == Qt::Key_U) {
         setUnwrapMode(!unwrapMode_); // M17b：Ctrl+Shift+U 切换不换行显示
@@ -784,8 +834,82 @@ ZzLogicalPos ZzCoreTerminalWidget::logicalPosAtPixel(QPoint pos) const
     return {sp.line, sp.col};
 }
 
+std::uint16_t ZzCoreTerminalWidget::hyperlinkIdAtPixel(QPoint pos, QString *uriOut) const
+{
+    if (!ZzAppSettings::instance().hyperlinkEnabled())
+        return 0;
+    const ZzSize grid = term_.size();
+    const int row = pos.y() / cellHeight_;
+    const int col = pos.x() / cellWidth_;
+    // 不夹取：网格区外的空白/边沿像素不算命中（夹取会把边缘链接误报到屏外点）
+    if (row < 0 || row >= grid.rows || col < 0 || col >= grid.cols)
+        return 0;
+
+    const auto hist = (std::int64_t)term_.historyView().lineCount();
+    std::uint16_t id = 0;
+    bool fromHistory = false;
+    if (unwrapMode_) {
+        // 拼接空间纵向视口（口径同 paintUnwrapped）；横向加 hScrollOffset_
+        const ZzUnwrapView &view = term_.unwrapView();
+        const auto total = (long long)view.lineCount();
+        const long long idx = total - scrollOffset_ - grid.rows + row;
+        if (idx < 0 || idx >= total)
+            return 0;
+        const ZzStitchedLineView line = view.lineAt((std::size_t)idx);
+        const int c = col + hScrollOffset_;
+        if (c >= line.cellCount())
+            return 0;
+        id = line.cellAt(c).hyperlinkId;
+        fromHistory = line.sourceLine() < hist; // 跨缝链归屏幕侧（同选区口径）
+    } else {
+        // 统一物理行号（口径同 lineViewAtVisibleRow）：[0,hist) 历史区
+        const std::int64_t u = hist - scrollOffset_ + row;
+        ZzCellView cell;
+        if (u < hist) {
+            const ZzLineView line = term_.historyView().lineAt((std::size_t)u);
+            if (col >= line.cellCount())
+                return 0;
+            cell = line.cellAt(col);
+            fromHistory = true;
+        } else {
+            const ZzLineView line = term_.renderView().lineAt((int)(u - hist));
+            if (col >= line.cellCount())
+                return 0;
+            cell = line.cellAt(col);
+        }
+        id = cell.hyperlinkId;
+    }
+    if (id == 0)
+        return 0;
+    // id→URI 池是终端级的，历史/屏幕两视图同一池；按区域取主视图即可
+    const std::string u8 = fromHistory
+                               ? term_.historyView().hyperlinkUri(id)
+                               : term_.renderView().hyperlinkUri(id);
+    if (u8.empty())
+        return 0; // LRU 淘汰/未登记：视为无链接
+    if (uriOut)
+        *uriOut = QString::fromStdString(u8);
+    return id;
+}
+
 void ZzCoreTerminalWidget::mousePressEvent(QMouseEvent *event)
 {
+    // M22b：Ctrl+点击命中链接直接打开，不启动选区；落在非链接格照常走选区
+    if (event->button() == Qt::LeftButton
+        && (event->modifiers() & Qt::ControlModifier) != 0
+        && ZzAppSettings::instance().hyperlinkEnabled()) {
+        QString uri;
+        if (hyperlinkIdAtPixel(event->pos(), &uri) != 0 && !uri.isEmpty()) {
+            const QUrl url(uri);
+            static const QStringList kAllowed = {
+                QStringLiteral("http"), QStringLiteral("https"), QStringLiteral("ftp"),
+                QStringLiteral("ssh"), QStringLiteral("mailto"), QStringLiteral("file") };
+            if (kAllowed.contains(url.scheme().toLower()))
+                QDesktopServices::openUrl(url);
+            event->accept();
+            return;
+        }
+    }
     if (event->button() == Qt::LeftButton) {
         selecting_ = true;
         selAnchor_ = logicalPosAtPixel(event->pos());
@@ -799,6 +923,24 @@ void ZzCoreTerminalWidget::mousePressEvent(QMouseEvent *event)
 
 void ZzCoreTerminalWidget::mouseMoveEvent(QMouseEvent *event)
 {
+    // M22b：Ctrl+悬停链接检测（选区拖拽逻辑之前；松开 Ctrl 后下一次
+    // 移动以 ctrl=false 自然清 hover，leaveEvent/keyReleaseEvent 兜底）
+    const bool ctrl = (event->modifiers() & Qt::ControlModifier) != 0;
+    std::uint16_t newHover = 0;
+    QString uri;
+    if (ctrl && !selecting_)
+        newHover = hyperlinkIdAtPixel(event->pos(), &uri);
+    if (newHover != hoverHyperlinkId_) {
+        hoverHyperlinkId_ = newHover;
+        hoverHyperlinkUri_ = uri;
+        setCursor(newHover != 0 ? Qt::PointingHandCursor : Qt::IBeamCursor);
+        if (newHover != 0)
+            QToolTip::showText(event->globalPosition().toPoint(), uri, this);
+        else
+            QToolTip::hideText();
+        update(); // 触发重绘（下划线 + 关联高亮）
+    }
+
     if (selecting_) {
         // 不换行模式：拖拽越过左右缘时横向视口步进（选中屏外内容的通道）。
         if (unwrapMode_) {
@@ -835,6 +977,35 @@ void ZzCoreTerminalWidget::mouseReleaseEvent(QMouseEvent *event)
         return;
     }
     QWidget::mouseReleaseEvent(event);
+}
+
+void ZzCoreTerminalWidget::keyReleaseEvent(QKeyEvent *event)
+{
+    // M22b：Ctrl 抬起——清下划线态与 hover（光标/tooltip/高亮一并复位）
+    if (event->key() == Qt::Key_Control) {
+        ctrlHeld_ = false;
+        if (hoverHyperlinkId_ != 0) {
+            hoverHyperlinkId_ = 0;
+            hoverHyperlinkUri_.clear();
+            setCursor(Qt::IBeamCursor);
+            QToolTip::hideText();
+        }
+        update();
+    }
+    QWidget::keyReleaseEvent(event);
+}
+
+void ZzCoreTerminalWidget::leaveEvent(QEvent *event)
+{
+    // 鼠标离窗：清 hover（tooltip 不留残影，高亮随重绘消失）
+    if (hoverHyperlinkId_ != 0) {
+        hoverHyperlinkId_ = 0;
+        hoverHyperlinkUri_.clear();
+        setCursor(Qt::IBeamCursor);
+        QToolTip::hideText();
+        update();
+    }
+    QWidget::leaveEvent(event);
 }
 
 void ZzCoreTerminalWidget::selectAll()

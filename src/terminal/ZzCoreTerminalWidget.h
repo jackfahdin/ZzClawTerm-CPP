@@ -23,6 +23,7 @@
 #include <QWidget>
 
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <string_view>
 
@@ -135,6 +136,8 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
+    void leaveEvent(QEvent *event) override;
     void inputMethodEvent(QInputMethodEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
     void showEvent(QShowEvent *event) override;
@@ -152,6 +155,9 @@ private:
                                      int row, const ZzStitchedLineView &line);
     [[nodiscard]] ZzLineView lineViewAtVisibleRow(int row) const;
     [[nodiscard]] ZzLogicalPos logicalPosAtPixel(QPoint pos) const;
+    /** @brief 像素坐标处的 hyperlinkId（M22b；0 = 无链接/设置关闭/URI 已淘汰）。
+     *  @param uriOut 非空且命中时回填完整 URI。 */
+    [[nodiscard]] std::uint16_t hyperlinkIdAtPixel(QPoint pos, QString *uriOut) const;
     [[nodiscard]] std::size_t stitchedTotalLines() const;
     [[nodiscard]] int stitchedHistoryCount() const;
     void followCursorHorizontally();
@@ -172,6 +178,9 @@ private:
     int wheelRemainder_ = 0;           ///< hi-res 滚轮 delta 余数（凑满 120 成一档）
     bool selecting_ = false;
     ZzLogicalPos selAnchor_{};
+    bool ctrlHeld_ = false;               ///< Ctrl 按住中（M22b：链接下划线触发）
+    std::uint16_t hoverHyperlinkId_ = 0;  ///< 当前 Ctrl 悬停的 hyperlinkId（0 = 无）
+    QString hoverHyperlinkUri_;           ///< hover 命中的完整 URI（tooltip 用）
     QString preedit_;                 ///< IME 组合中串（绘制于光标处，不进会话）
     std::FILE *trace_ = nullptr;      ///< 留痕（env ZZCORE_SPIKE_TRACE）
 };

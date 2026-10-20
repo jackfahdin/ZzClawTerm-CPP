@@ -62,6 +62,11 @@ public:
     [[nodiscard]] bool x11ServerEnabled() const;
     void setX11ServerEnabled(bool enabled);
 
+    /** @brief 启用 OSC 8 可点击超链接（Ctrl 悬停下划线/tooltip、Ctrl+点击打开），
+     *        默认 true；关闭后链接格无下划线无手型，点击走原选区逻辑。 */
+    [[nodiscard]] bool hyperlinkEnabled() const;
+    void setHyperlinkEnabled(bool enabled);
+
     /**
      * @brief 界面语言："system"（默认，跟随系统）/ "zh_CN" / "en"。
      * @note 变更后由 ZzLanguageManager 立即应用，无需重启。

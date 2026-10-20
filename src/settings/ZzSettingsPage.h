@@ -29,6 +29,7 @@ public:
     [[nodiscard]] QSpinBox *historyLinesSpin() const;
     [[nodiscard]] QComboBox *credentialBackendCombo() const;
     [[nodiscard]] QCheckBox *x11ServerCheck() const;
+    [[nodiscard]] QCheckBox *hyperlinkCheck() const;
     [[nodiscard]] QComboBox *sftpBlockSizeCombo() const;
 
 protected:
@@ -48,6 +49,7 @@ private:
     QSpinBox *m_historyLinesSpin;
     QComboBox *m_credentialBackendCombo;
     QCheckBox *m_x11ServerCheck;
+    QCheckBox *m_hyperlinkCheck;
     QComboBox *m_sftpBlockSizeCombo;
     QLabel *m_noteLabel;
 };
