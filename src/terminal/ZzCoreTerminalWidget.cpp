@@ -860,7 +860,11 @@ std::uint16_t ZzCoreTerminalWidget::hyperlinkIdAtPixel(QPoint pos, QString *uriO
         if (c >= line.cellCount())
             return 0;
         id = line.cellAt(c).hyperlinkId;
-        fromHistory = line.sourceLine() < hist; // 跨缝链归屏幕侧（同选区口径）
+        // 跨缝拼接行归历史侧（sourceLine() < hist）。这是 hyperlink 命中分派的
+        // 有意口径，与 :648 选区口径（sourceLine + sourceLineCount <= hist，
+        // 跨缝归屏幕侧）本就不同——id→URI 池为终端级，两侧视图同池解析，
+        // 归哪侧结果相同。
+        fromHistory = line.sourceLine() < hist;
     } else {
         // 统一物理行号（口径同 lineViewAtVisibleRow）：[0,hist) 历史区
         const std::int64_t u = hist - scrollOffset_ + row;
