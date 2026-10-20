@@ -34,6 +34,24 @@ endfunction()
 # ZZ_TERM_BACKEND=contour 环境变量切换（见 ZzCoreTerminalWidget）。
 zz_require_submodule(third_party/ZzTermCore)
 option(ZZTERM_WITH_CONTOUR "集成 contour 后端（实验演示用）" OFF)
+# Windows 下 contour vtpty 强制 find_package(Libssh2 CONFIG REQUIRED) 并链接
+# Libssh2::libssh2（大写 L，上游按其预编译依赖包的导出名假设）；本工程
+# vendored libssh2（ZzSshCore 下）的导出名是小写 libssh2::libssh2。预生成
+# shim config 把上游期望名接到 vendored 目标：INTERFACE_LINK_LIBRARIES 的
+# 目标名 generate 期才解析，ZzSshCore 后于 ZzTermCore 引入无碍。vtpty 的
+# builtin-SSH 产品不使用（产品 SSH 走 ZzSshCore），仅为满足链接面。
+if(WIN32 AND ZZTERM_WITH_CONTOUR)
+    set(_zz_libssh2_shim_dir "${CMAKE_BINARY_DIR}/zz-cmake-shims/libssh2")
+    file(WRITE "${_zz_libssh2_shim_dir}/Libssh2Config.cmake"
+"if(NOT TARGET Libssh2::libssh2)
+    add_library(Libssh2::libssh2 INTERFACE IMPORTED)
+    set_target_properties(Libssh2::libssh2 PROPERTIES
+        INTERFACE_LINK_LIBRARIES libssh2
+        INTERFACE_INCLUDE_DIRECTORIES \"${CMAKE_SOURCE_DIR}/third_party/ZzSshCore/third_party/libssh2/include\")
+endif()
+")
+    set(Libssh2_DIR "${_zz_libssh2_shim_dir}" CACHE PATH "contour vtpty 的 libssh2 shim" FORCE)
+endif()
 set(ZZTERM_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(third_party/ZzTermCore)
 
