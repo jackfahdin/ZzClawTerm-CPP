@@ -1,5 +1,6 @@
 #include "ZzCoreTerminalWidget.h"
 
+#include <QApplication>
 #include <QClipboard>
 #include <QContextMenuEvent>
 #include <QDesktopServices>
@@ -13,7 +14,9 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QShowEvent>
-#include <QToolTip>
+#include <QTimer>
+
+#include <ZzFluentUI/ZzToolTip.h>
 #include <QUrl>
 #include <QWheelEvent>
 
@@ -938,10 +941,38 @@ void ZzCoreTerminalWidget::mouseMoveEvent(QMouseEvent *event)
         hoverHyperlinkId_ = newHover;
         hoverHyperlinkUri_ = uri;
         setCursor(newHover != 0 ? Qt::PointingHandCursor : Qt::IBeamCursor);
-        if (newHover != 0)
-            QToolTip::showText(event->globalPosition().toPoint(), uri, this);
-        else
-            QToolTip::hideText();
+        if (newHover != 0) {
+            ZzFluentUI::ZzToolTip::showText(event->globalPosition().toPoint(), uri, this);
+            // 临时诊断（ZZ_DEBUG_TOOLTIP=1 时输出 tooltip 配色链路，定位浅色主题文字发灰问题）
+            if (qEnvironmentVariableIsSet("ZZ_DEBUG_TOOLTIP")) {
+                QTimer::singleShot(120, this, [] {
+                    const auto dumpPal = [](const char *tag, const QPalette &p) {
+                        qInfo("[tipdbg] %s ToolTipText act=%s ina=%s dis=%s resolveMask=%#x",
+                              tag,
+                              qPrintable(p.color(QPalette::Active, QPalette::ToolTipText).name()),
+                              qPrintable(p.color(QPalette::Inactive, QPalette::ToolTipText).name()),
+                              qPrintable(p.color(QPalette::Disabled, QPalette::ToolTipText).name()),
+                              p.resolveMask());
+                    };
+                    dumpPal("app    ", QApplication::palette());
+                    for (QWidget *tlw : QApplication::topLevelWidgets()) {
+                        if (tlw->objectName() == QLatin1String("ZzToolTipLabel")
+                            && tlw->isVisible()) {
+                            dumpPal("tiplbl ", tlw->palette());
+                            qInfo("[tipdbg] tiplbl opacity=%g dpr=%g translucent=%d setPalette=%d font=%s %dpx",
+                                  tlw->windowOpacity(),
+                                  tlw->devicePixelRatioF(),
+                                  tlw->testAttribute(Qt::WA_TranslucentBackground),
+                                  tlw->testAttribute(Qt::WA_SetPalette),
+                                  qPrintable(tlw->font().family()),
+                                  tlw->font().pixelSize());
+                        }
+                    }
+                });
+            }
+        } else {
+            ZzFluentUI::ZzToolTip::hideText();
+        }
         update(); // 触发重绘（下划线 + 关联高亮）
     }
 
@@ -992,7 +1023,7 @@ void ZzCoreTerminalWidget::keyReleaseEvent(QKeyEvent *event)
             hoverHyperlinkId_ = 0;
             hoverHyperlinkUri_.clear();
             setCursor(Qt::IBeamCursor);
-            QToolTip::hideText();
+            ZzFluentUI::ZzToolTip::hideText();
         }
         update();
     }
@@ -1006,7 +1037,7 @@ void ZzCoreTerminalWidget::leaveEvent(QEvent *event)
         hoverHyperlinkId_ = 0;
         hoverHyperlinkUri_.clear();
         setCursor(Qt::IBeamCursor);
-        QToolTip::hideText();
+        ZzFluentUI::ZzToolTip::hideText();
         update();
     }
     QWidget::leaveEvent(event);
