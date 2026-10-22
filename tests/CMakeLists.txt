@@ -97,4 +97,9 @@ if(TARGET Qt6::lrelease)
             FILES ${zz_test_qm_files})
     endforeach()
 endif()
-zz_add_qtest(tst_ZzResizeSweep unit/tst_ZzResizeSweep.cpp)
+# 仅 Linux 注册：依赖本地 bash + POSIX PTY 与 GNU readline 行为（水平滚动模式
+# 隐藏过宽提示符）。Windows 无 bash（PTY 后端为 ConPTY + cmd，场景不成立）；
+# macOS 自带 bash 3.2 的 readline 重绘协议与 GNU bash 5.x 不同，场景语义未覆盖。
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    zz_add_qtest(tst_ZzResizeSweep unit/tst_ZzResizeSweep.cpp)
+endif()
